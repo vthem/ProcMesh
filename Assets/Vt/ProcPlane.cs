@@ -1,121 +1,29 @@
+
 using System;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class ProcQuad : MonoBehaviour
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+struct ExampleVertex
 {
-    public int lod = 0;
-    public Vector2 size = Vector2.one;
-    public float resolution = 20f;
-    public Vector2Int VertexCount => new Vector2Int(Mathf.RoundToInt(size.x * resolution), Mathf.RoundToInt(size.y * resolution));
+    public Vector3 pos;
+}
 
-    private MeshInfo meshInfo;
+struct MeshInfo
+{
+    public Mesh mesh;
+    public NativeArray<ExampleVertex> vertices;
+    public NativeArray<ushort> indices;
+    public Vector2Int vertexCount;
+    public Vector2 size;
+    public int VertexCount => vertexCount.x * vertexCount.y;
+    public int IndiceCount => (vertexCount.x - 1) * (vertexCount.y - 1) * 2 * 3;
+}
 
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-    private struct ExampleVertex
-    {
-        public Vector3 pos;
-    }
-
-    // Start is called before the first frame update
-    //void Start()
-    //{
-    //    var mesh = GetComponent<MeshFilter>().sharedMesh;
-    //    if (!mesh)
-    //    {
-    //        mesh = new Mesh();
-    //        GetComponent<MeshFilter>().sharedMesh = mesh;
-    //    }
-    //    mesh.MarkDynamic();
-
-    //    GenPlane5(mesh, Mathf.RoundToInt(size.x * resolution), Mathf.RoundToInt(size.x * resolution), size.x, size.y, Perlin);
-    //}
-
-    private void Update()
-    {
-        if (!IsMeshInfoValid())
-        {
-            transform.hasChanged = false;
-            ReleaseMeshInfo();
-            AllocateMeshInfo();
-            GenPlane6(meshInfo, Perlin);
-        }
-    }
-
-    void AllocateMeshInfo()
-    {
-        var mesh = GetComponent<MeshFilter>().sharedMesh;
-        if (!mesh)
-        {
-            mesh = new Mesh();
-            GetComponent<MeshFilter>().sharedMesh = mesh;
-        }
-        mesh.MarkDynamic();
-        meshInfo.mesh = mesh;
-        meshInfo.size = size;
-        meshInfo.vertexCount = VertexCount;
-
-        meshInfo.vertices = new NativeArray<ExampleVertex>(meshInfo.VertexCount, Allocator.Persistent);
-        meshInfo.indices = new NativeArray<ushort>(meshInfo.IndiceCount, Allocator.Persistent);
-    }
-
-    void ReleaseMeshInfo()
-    {
-        if (meshInfo.vertices.IsCreated)
-        {
-            meshInfo.vertices.Dispose();
-        }
-        if (meshInfo.indices.IsCreated)
-        {
-            meshInfo.indices.Dispose();
-        }
-    }
-
-    bool IsMeshInfoValid()
-    {
-        if (transform.hasChanged)
-            return false;
-        if (!meshInfo.mesh || !meshInfo.indices.IsCreated || !meshInfo.vertices.IsCreated)
-            return false;
-        return meshInfo.size == size && meshInfo.vertexCount == VertexCount;
-    }
-
-    float Perlin(float x, float z)
-    {
-        var v = transform.TransformPoint(new Vector3(x, 0, z));
-        return Mathf.PerlinNoise(v.x, v.z);
-    }
-
-    static void GenObj(GameObject template, string name, int lod)
-    {
-        var obj = GameObject.Instantiate(template);
-        obj.name = name;
-        obj.transform.parent = template.transform;
-
-        var mesh = obj.GetComponent<MeshFilter>().sharedMesh;
-        if (!mesh)
-        {
-            mesh = new Mesh();
-            obj.GetComponent<MeshFilter>().sharedMesh = mesh;
-        }
-        mesh.MarkDynamic();
-
-        //if (lod == 0)
-        //{
-        //    GenPlane5(mesh, 40, 20, 2f, 1f);
-        //}
-        //else if (lod == 1)
-        //{
-        //    GenPlane5(mesh, 20, 10, 2f, 1f);
-        //}
-        //else if (lod == 2)
-        //{
-        //    GenPlane5(mesh, 10, 5, 2f, 1f);
-        //}
-    }
-
-    static void GenPlane(Mesh mesh)
+class ProcPlane
+{
+    public static void Gen1(Mesh mesh)
     {
         // specify vertex count and layout
         var layout = new[]
@@ -148,7 +56,7 @@ public class ProcQuad : MonoBehaviour
         mesh.subMeshCount = 1;
         mesh.SetSubMesh(0, new SubMeshDescriptor(0, 6, MeshTopology.Triangles));
     }
-    static void GenPlane2(Mesh mesh, int xCount, int zCount)
+    public static void Gen2(Mesh mesh, int xCount, int zCount)
     {
         // specify vertex count and layout
         var layout = new[]
@@ -201,7 +109,7 @@ public class ProcQuad : MonoBehaviour
         mesh.subMeshCount = 1;
         mesh.SetSubMesh(0, new SubMeshDescriptor(0, indiceCount, MeshTopology.Triangles));
     }
-    static void GenPlane3(Mesh mesh, int xCount, int zCount, float xSize, float zSize)
+    public static void Gen3(Mesh mesh, int xCount, int zCount, float xSize, float zSize)
     {
         // specify vertex count and layout
         var layout = new[]
@@ -257,7 +165,7 @@ public class ProcQuad : MonoBehaviour
         mesh.subMeshCount = 1;
         mesh.SetSubMesh(0, new SubMeshDescriptor(0, indiceCount, MeshTopology.Triangles));
     }
-    static void GenPlane4(Mesh mesh, int xCount, int zCount, float xSize, float zSize)
+    public static void Gen4(Mesh mesh, int xCount, int zCount, float xSize, float zSize)
     {
         // specify vertex count and layout
         var layout = new[]
@@ -316,7 +224,7 @@ public class ProcQuad : MonoBehaviour
         mesh.subMeshCount = 1;
         mesh.SetSubMesh(0, new SubMeshDescriptor(0, indiceCount, MeshTopology.Triangles));
     }
-    static void GenPlane5(Mesh mesh, int xCount, int zCount, float xSize, float zSize, Func<float, float, float> height)
+    public static void Gen5(Mesh mesh, int xCount, int zCount, float xSize, float zSize, Func<float, float, float> height)
     {
         // specify vertex count and layout
         var layout = new[]
@@ -378,9 +286,9 @@ public class ProcQuad : MonoBehaviour
         }
 
         // center
-        for (z = 1; z < zCount-1; z++)
+        for (z = 1; z < zCount - 1; z++)
         {
-            for (x = 1; x < xCount-1; x++)
+            for (x = 1; x < xCount - 1; x++)
             {
                 var i = x + z * xCount;
                 var xPos = xStart + x * xDelta;
@@ -420,19 +328,7 @@ public class ProcQuad : MonoBehaviour
         mesh.subMeshCount = 1;
         mesh.SetSubMesh(0, new SubMeshDescriptor(0, indiceCount, MeshTopology.Triangles));
     }
-
-    struct MeshInfo
-    {
-        public Mesh mesh;
-        public NativeArray<ExampleVertex> vertices;
-        public NativeArray<ushort> indices;
-        public Vector2Int vertexCount;
-        public Vector2 size;
-        public int VertexCount => vertexCount.x * vertexCount.y;
-        public int IndiceCount => (vertexCount.x - 1) * (vertexCount.y - 1) * 2 * 3;
-    }
-
-    static void GenPlane6(MeshInfo info, Func<float, float, float> height)
+    public static void Gen6(MeshInfo info, Func<float, float, float> height)
     {
         int xCount = info.vertexCount.x;
         int zCount = info.vertexCount.y;
@@ -452,7 +348,7 @@ public class ProcQuad : MonoBehaviour
         mesh.SetVertexBufferParams(vertexCount, layout);
 
         // set vertex data
-        
+
         var xDelta = xSize / (float)(xCount - 1);
         var zDelta = zSize / (float)(zCount - 1);
 
@@ -515,8 +411,8 @@ public class ProcQuad : MonoBehaviour
             }
         }
 
-        mesh.SetVertexBufferData(verts, 0, 0, vertexCount);       
-        mesh.SetIndexBufferParams(indiceCount, IndexFormat.UInt16);        
+        mesh.SetVertexBufferData(verts, 0, 0, vertexCount);
+        mesh.SetIndexBufferParams(indiceCount, IndexFormat.UInt16);
 
         int idx = 0;
         for (z = 0; z < zCount - 1; ++z)

@@ -451,5 +451,6 @@ class ProcPlane
         mesh.SetIndexBufferData(indices, 0, 0, indiceCount);
         mesh.subMeshCount = 1;
         mesh.SetSubMesh(0, new SubMeshDescriptor(0, indiceCount, MeshTopology.Triangles));
+        mesh.RecalculateBounds();
     }
 }

@@ -239,7 +239,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lod: 2
   size: {x: 10, y: 10}
-  resolution: 20
 --- !u!23 &1317558772
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -259,7 +258,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 019466160e4e2f7409f1e582431bf409, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

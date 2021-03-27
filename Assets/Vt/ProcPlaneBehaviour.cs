@@ -5,10 +5,9 @@ using UnityEngine.Rendering;
 
 public class ProcPlaneBehaviour : MonoBehaviour
 {
+    [Range(0, 10)]
     public int lod = 0;
     public Vector2 size = Vector2.one;
-    public float resolution = 20f;
-    public Vector2Int VertexCount => new Vector2Int(Mathf.RoundToInt(size.x * resolution), Mathf.RoundToInt(size.y * resolution));
 
     private MeshInfo meshInfo;
 
@@ -48,9 +47,9 @@ public class ProcPlaneBehaviour : MonoBehaviour
         mesh.MarkDynamic();
         meshInfo.mesh = mesh;
         meshInfo.size = size;
-        meshInfo.vertexCount = VertexCount;
+        meshInfo.lod = lod;
 
-        meshInfo.vertices = new NativeArray<ExampleVertex>(meshInfo.VertexCount, Allocator.Persistent);
+        meshInfo.vertices = new NativeArray<ExampleVertex>(meshInfo.VertexCount2D, Allocator.Persistent);
         meshInfo.indices = new NativeArray<ushort>(meshInfo.IndiceCount, Allocator.Persistent);
     }
 
@@ -72,7 +71,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
             return false;
         if (!meshInfo.mesh || !meshInfo.indices.IsCreated || !meshInfo.vertices.IsCreated)
             return false;
-        return meshInfo.size == size && meshInfo.vertexCount == VertexCount;
+        return meshInfo.size == size && meshInfo.lod == lod;
     }
 
     float Perlin(float x, float z)

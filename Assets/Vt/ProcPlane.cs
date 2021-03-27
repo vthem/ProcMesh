@@ -15,10 +15,25 @@ struct MeshInfo
     public Mesh mesh;
     public NativeArray<ExampleVertex> vertices;
     public NativeArray<ushort> indices;
-    public Vector2Int vertexCount;
+    public int lod;
     public Vector2 size;
-    public int VertexCount => vertexCount.x * vertexCount.y;
-    public int IndiceCount => (vertexCount.x - 1) * (vertexCount.y - 1) * 2 * 3;
+    public int VertexCount1D => (int)Mathf.Pow(2, lod) + 1;
+    public int VertexCount2D
+    {
+        get
+        {
+            var vc1d = VertexCount1D;
+            return vc1d * vc1d;
+        }
+    }
+    public int IndiceCount
+    {
+        get
+        {
+            var vc1d = VertexCount1D;
+            return (VertexCount1D - 1) * (VertexCount1D - 1) * 2 * 3;
+        }
+    }
 }
 
 class ProcPlane
@@ -330,14 +345,14 @@ class ProcPlane
     }
     public static void Gen6(MeshInfo info, Func<float, float, float> height)
     {
-        int xCount = info.vertexCount.x;
-        int zCount = info.vertexCount.y;
+        int xCount = info.VertexCount1D;
+        int zCount = xCount;
         float xSize = info.size.x;
         float zSize = info.size.y;
         Mesh mesh = info.mesh;
         var verts = info.vertices; // new NativeArray<ExampleVertex>(vertexCount, Allocator.Temp);
         var indices = info.indices; // new NativeArray<ushort>(indiceCount, Allocator.Temp);
-        var vertexCount = info.VertexCount;
+        var vertexCount = info.VertexCount2D;
         var indiceCount = info.IndiceCount;
 
         // specify vertex count and layout

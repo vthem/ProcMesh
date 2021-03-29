@@ -1,29 +1,55 @@
-using System;
 using Unity.Collections;
 using UnityEngine;
-using UnityEngine.Rendering;
+
+public struct ProcPlaneCreateInfo
+{
+    public string mName;
+    public int mLod;
+    public Vector2 mSize;
+    public Transform oParent;
+}
 
 public class ProcPlaneBehaviour : MonoBehaviour
 {
+    public static ProcPlaneBehaviour Create(ProcPlaneCreateInfo createInfo)
+    {
+        var name = createInfo.mName;
+        var lod = createInfo.mLod;
+        var size = createInfo.mSize;
+        var parent = createInfo.oParent;
+
+        var obj = new GameObject(name);
+        if (parent)
+            obj.transform.SetParent(parent);
+        var meshFilter = obj.AddComponent<MeshFilter>();
+        var meshRenderer = obj.AddComponent<MeshRenderer>();
+        obj.name = name;
+
+        var mesh = meshFilter.sharedMesh;
+        if (!mesh)
+        {
+            mesh = new Mesh();
+            meshFilter.sharedMesh = mesh;
+        }
+        mesh.MarkDynamic();
+
+        var procPlane = obj.AddComponent<ProcPlaneBehaviour>();
+        procPlane.lod = lod;
+        procPlane.size = size;
+
+        meshRenderer.sharedMaterial = Resources.Load("Wireframe") as Material;
+        return procPlane;
+    }
+
+    #region private
     [Range(0, 10)]
-    public int lod = 0;
-    public Vector2 size = Vector2.one;
+    [SerializeField]
+    private int lod = 0;
+
+    [SerializeField]
+    private Vector2 size = Vector2.one;
 
     private MeshInfo meshInfo;
-
-    // Start is called before the first frame update
-    //void Start()
-    //{
-    //    var mesh = GetComponent<MeshFilter>().sharedMesh;
-    //    if (!mesh)
-    //    {
-    //        mesh = new Mesh();
-    //        GetComponent<MeshFilter>().sharedMesh = mesh;
-    //    }
-    //    mesh.MarkDynamic();
-
-    //    GenPlane5(mesh, Mathf.RoundToInt(size.x * resolution), Mathf.RoundToInt(size.x * resolution), size.x, size.y, Perlin);
-    //}
 
     private void Update()
     {
@@ -36,7 +62,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
         }
     }
 
-    void AllocateMeshInfo()
+    private void AllocateMeshInfo()
     {
         var mesh = GetComponent<MeshFilter>().sharedMesh;
         if (!mesh)
@@ -53,7 +79,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
         meshInfo.indices = new NativeArray<ushort>(meshInfo.IndiceCount, Allocator.Persistent);
     }
 
-    void ReleaseMeshInfo()
+    private void ReleaseMeshInfo()
     {
         if (meshInfo.vertices.IsCreated)
         {
@@ -65,7 +91,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
         }
     }
 
-    bool IsMeshInfoValid()
+    private bool IsMeshInfoValid()
     {
         if (transform.hasChanged)
             return false;
@@ -74,37 +100,15 @@ public class ProcPlaneBehaviour : MonoBehaviour
         return meshInfo.size == size && meshInfo.lod == lod;
     }
 
-    float Perlin(float x, float z)
+    private float Perlin(float x, float z)
     {
         var v = transform.TransformPoint(new Vector3(x, 0, z));
         return Mathf.PerlinNoise(v.x, v.z);
     }
 
-    static void GenObj(GameObject template, string name, int lod)
+    private void OnDestroy()
     {
-        var obj = GameObject.Instantiate(template);
-        obj.name = name;
-        obj.transform.parent = template.transform;
-
-        var mesh = obj.GetComponent<MeshFilter>().sharedMesh;
-        if (!mesh)
-        {
-            mesh = new Mesh();
-            obj.GetComponent<MeshFilter>().sharedMesh = mesh;
-        }
-        mesh.MarkDynamic();
-
-        //if (lod == 0)
-        //{
-        //    GenPlane5(mesh, 40, 20, 2f, 1f);
-        //}
-        //else if (lod == 1)
-        //{
-        //    GenPlane5(mesh, 20, 10, 2f, 1f);
-        //}
-        //else if (lod == 2)
-        //{
-        //    GenPlane5(mesh, 10, 5, 2f, 1f);
-        //}
+        ReleaseMeshInfo();
     }
+    #endregion // private
 }

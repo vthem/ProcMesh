@@ -1,5 +1,6 @@
 using Unity.Collections;
 using UnityEngine;
+using SysStopwatch = System.Diagnostics.Stopwatch;
 
 public struct ProcPlaneCreateParameters
 {
@@ -50,6 +51,9 @@ public class ProcPlaneBehaviour : MonoBehaviour
     private MeshInfo meshInfo;
     private MeshGenerateParameter meshGenerateParameter;
 
+    static long benchElaspedMilliseconds = 0;
+    static int benchTotalVerticesProcessed = 0;
+
     private void Update()
     {
         if (!IsMeshInfoValid())
@@ -57,8 +61,16 @@ public class ProcPlaneBehaviour : MonoBehaviour
             transform.hasChanged = false;
             ReleaseMeshInfo();
             AllocateMeshInfo();
+            SysStopwatch sw = SysStopwatch.StartNew();
             ProcPlane.Gen6(meshGenerateParameter, Perlin);
+            benchElaspedMilliseconds += sw.ElapsedMilliseconds;
+            benchTotalVerticesProcessed += meshGenerateParameter.VertexCount2D;
         }
+    }
+
+    private void OnGUI()
+    {
+        GUILayout.Label($"{benchTotalVerticesProcessed/ benchElaspedMilliseconds} vertices/ms");
     }
 
     private void AllocateMeshInfo()

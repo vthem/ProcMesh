@@ -420,6 +420,7 @@ class ProcPlane
             var yPos = height(xPos, zPos);
             verts[i] = new ExampleVertex { pos = new Vector3(xPos, yPos, zPos) };
         }
+
         // front
         z = zCount - 1;
         if (frontLod >= 0 && lod > frontLod)
@@ -475,6 +476,7 @@ class ProcPlane
                 verts[i] = new ExampleVertex { pos = new Vector3(xPos, yPos, zPos) };
             }
         }
+
         // right
         x = xCount - 1;
         for (z = 0; z < zCount; z++)
@@ -485,6 +487,7 @@ class ProcPlane
             var yPos = height(xPos, zPos);
             verts[i] = new ExampleVertex { pos = new Vector3(xPos, yPos, zPos) };
         }
+
         // back
         z = 0;
         for (x = 0; x < xCount; x++)

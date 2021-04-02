@@ -10,14 +10,44 @@ struct ExampleVertex
     public Vector3 pos;
 }
 
-struct MeshInfo
+[Serializable]
+public struct MeshInfo
+{
+    public int lod;
+    public Vector2 size;
+    public int leftLod;
+    public int frontLod;
+    public int rightLod;
+    public int backLod;
+
+    public override bool Equals(object obj)
+    {
+        return base.Equals(obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return base.GetHashCode();
+    }
+
+    public static bool operator==(MeshInfo a, MeshInfo b)
+    {
+        return a.lod == b.lod && a.size == b.size && a.leftLod == b.leftLod && a.frontLod == b.frontLod && a.rightLod == b.rightLod && a.backLod == b.backLod;
+    }
+
+    public static bool operator!=(MeshInfo a, MeshInfo b)
+    {
+        return !(a == b);
+    }
+}
+
+struct MeshGenerateParameter
 {
     public Mesh mesh;
     public NativeArray<ExampleVertex> vertices;
     public NativeArray<ushort> indices;
-    public int lod;
-    public Vector2 size;
-    public int VertexCount1D => (int)Mathf.Pow(2, lod) + 1;
+    public MeshInfo meshInfo;
+    public int VertexCount1D => ComputeVertexCount1D(meshInfo.lod);
     public int VertexCount2D
     {
         get
@@ -31,9 +61,11 @@ struct MeshInfo
         get
         {
             var vc1d = VertexCount1D;
-            return (VertexCount1D - 1) * (VertexCount1D - 1) * 2 * 3;
+            return (vc1d - 1) * (vc1d - 1) * 2 * 3;
         }
     }
+    
+    public static int ComputeVertexCount1D(int lod) => (int)Mathf.Pow(2, lod) + 1;
 }
 
 class ProcPlane
@@ -343,17 +375,22 @@ class ProcPlane
         mesh.subMeshCount = 1;
         mesh.SetSubMesh(0, new SubMeshDescriptor(0, indiceCount, MeshTopology.Triangles));
     }
-    public static void Gen6(MeshInfo info, Func<float, float, float> height)
+    public static void Gen6(MeshGenerateParameter gp, Func<float, float, float> height)
     {
-        int xCount = info.VertexCount1D;
+        int xCount = gp.VertexCount1D;
         int zCount = xCount;
-        float xSize = info.size.x;
-        float zSize = info.size.y;
-        Mesh mesh = info.mesh;
-        var verts = info.vertices; // new NativeArray<ExampleVertex>(vertexCount, Allocator.Temp);
-        var indices = info.indices; // new NativeArray<ushort>(indiceCount, Allocator.Temp);
-        var vertexCount = info.VertexCount2D;
-        var indiceCount = info.IndiceCount;
+        float xSize = gp.meshInfo.size.x;
+        float zSize = gp.meshInfo.size.y;
+        Mesh mesh = gp.mesh;
+        var verts = gp.vertices; // new NativeArray<ExampleVertex>(vertexCount, Allocator.Temp);
+        var indices = gp.indices; // new NativeArray<ushort>(indiceCount, Allocator.Temp);
+        var vertexCount = gp.VertexCount2D;
+        var indiceCount = gp.IndiceCount;
+        var lod = gp.meshInfo.lod;
+        var leftLod = gp.meshInfo.leftLod;
+        var frontLod = gp.meshInfo.frontLod;
+        var rightLod = gp.meshInfo.rightLod;
+        var backLod = gp.meshInfo.backLod;
 
         // specify vertex count and layout
         var layout = new[]
@@ -370,6 +407,7 @@ class ProcPlane
         var xStart = -xSize * 0.5f;
         var zStart = -zSize * 0.5f;
 
+
         // seams first
         // left
         int x = 0;
@@ -382,15 +420,60 @@ class ProcPlane
             var yPos = height(xPos, zPos);
             verts[i] = new ExampleVertex { pos = new Vector3(xPos, yPos, zPos) };
         }
-        // up
+        // front
         z = zCount - 1;
-        for (x = 0; x < xCount; x++)
-        {
-            var i = x + z * xCount;
-            var xPos = xStart + x * xDelta;
-            var zPos = zStart + z * zDelta;
-            var yPos = height(xPos, zPos);
-            verts[i] = new ExampleVertex { pos = new Vector3(xPos, yPos, zPos) };
+        if (frontLod >= 0 && lod > frontLod)
+        { // two pass, adapt seems to front lod
+            var nFrontX = MeshGenerateParameter.ComputeVertexCount1D(frontLod);
+            var nInterVertexBase = (xCount - nFrontX) / (nFrontX - 1);
+            var nInterVertexCur = 0;
+            for (x = 0; x < xCount; x++)
+            {
+                var i = x + z * xCount;
+                var xPos = xStart + x * xDelta;
+                var zPos = zStart + z * zDelta;
+                var yPos = float.NaN;
+                if (nInterVertexCur == 0)
+                {
+                    nInterVertexCur = nInterVertexBase;
+                    yPos = height(xPos, zPos);
+                }
+                else
+                {
+                    nInterVertexCur--;
+                }
+
+                verts[i] = new ExampleVertex { pos = new Vector3(xPos, yPos, zPos) };
+            }
+            var bPoint = 0;
+            nInterVertexBase = (xCount - nFrontX) / (nFrontX - 1);
+            for (x = 0; x < xCount; x++)
+            {
+                var i = x + z * xCount;
+                var xPos = xStart + x * xDelta;
+                var zPos = zStart + z * zDelta;
+                var yPos = verts[i].pos.y;
+                if (float.IsNaN(yPos))
+                {
+                    yPos = (verts[bPoint].pos.y + verts[bPoint + nInterVertexBase + 1].pos.y) * 0.5f;
+                }
+                else
+                {
+                    bPoint = i;
+                }
+                verts[i] = new ExampleVertex { pos = new Vector3(xPos, yPos, zPos) };
+            }
+        }
+        else
+        { // single pass
+            for (x = 0; x < xCount; x++)
+            {
+                var i = x + z * xCount;
+                var xPos = xStart + x * xDelta;
+                var zPos = zStart + z * zDelta;
+                var yPos = height(xPos, zPos);
+                verts[i] = new ExampleVertex { pos = new Vector3(xPos, yPos, zPos) };
+            }
         }
         // right
         x = xCount - 1;
@@ -402,7 +485,7 @@ class ProcPlane
             var yPos = height(xPos, zPos);
             verts[i] = new ExampleVertex { pos = new Vector3(xPos, yPos, zPos) };
         }
-        // bottom
+        // back
         z = 0;
         for (x = 0; x < xCount; x++)
         {

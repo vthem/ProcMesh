@@ -1,29 +1,34 @@
 using Unity.Collections;
 using UnityEngine;
 
-public struct ProcPlaneCreateInfo
+public struct ProcPlaneCreateParameters
 {
-    public string mName;
-    public int mLod;
-    public Vector2 mSize;
-    public Transform oParent;
+    public string name;
+    public string materialName;
+    public Transform parent;
+    public MeshInfo meshInfo;
+
+    public ProcPlaneCreateParameters(string name, int lod, Vector2 size, string materialName)
+    {
+        this.name = name;
+        this.materialName = materialName;
+        meshInfo.lod = lod;
+        meshInfo.size = size;
+        parent = null;
+        meshInfo.leftLod = meshInfo.rightLod = meshInfo.frontLod = meshInfo.backLod = -1;
+    }
 }
 
 public class ProcPlaneBehaviour : MonoBehaviour
 {
-    public static ProcPlaneBehaviour Create(ProcPlaneCreateInfo createInfo)
+    public static ProcPlaneBehaviour Create(ProcPlaneCreateParameters createParams)
     {
-        var name = createInfo.mName;
-        var lod = createInfo.mLod;
-        var size = createInfo.mSize;
-        var parent = createInfo.oParent;
-
-        var obj = new GameObject(name);
-        if (parent)
-            obj.transform.SetParent(parent);
+        var obj = new GameObject(createParams.name);
+        if (createParams.parent)
+            obj.transform.SetParent(createParams.parent);
         var meshFilter = obj.AddComponent<MeshFilter>();
         var meshRenderer = obj.AddComponent<MeshRenderer>();
-        obj.name = name;
+        obj.name = createParams.name;
 
         var mesh = meshFilter.sharedMesh;
         if (!mesh)
@@ -34,22 +39,16 @@ public class ProcPlaneBehaviour : MonoBehaviour
         mesh.MarkDynamic();
 
         var procPlane = obj.AddComponent<ProcPlaneBehaviour>();
-        procPlane.lod = lod;
-        procPlane.size = size;
+        procPlane.meshInfo = createParams.meshInfo;
 
-        meshRenderer.sharedMaterial = Resources.Load("Wireframe") as Material;
+        meshRenderer.sharedMaterial = Resources.Load(createParams.materialName) as Material;
         return procPlane;
     }
 
     #region private
-    [Range(0, 10)]
     [SerializeField]
-    private int lod = 0;
-
-    [SerializeField]
-    private Vector2 size = Vector2.one;
-
     private MeshInfo meshInfo;
+    private MeshGenerateParameter meshGenerateParameter;
 
     private void Update()
     {
@@ -58,7 +57,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
             transform.hasChanged = false;
             ReleaseMeshInfo();
             AllocateMeshInfo();
-            ProcPlane.Gen6(meshInfo, Perlin);
+            ProcPlane.Gen6(meshGenerateParameter, Perlin);
         }
     }
 
@@ -71,23 +70,22 @@ public class ProcPlaneBehaviour : MonoBehaviour
             GetComponent<MeshFilter>().sharedMesh = mesh;
         }
         mesh.MarkDynamic();
-        meshInfo.mesh = mesh;
-        meshInfo.size = size;
-        meshInfo.lod = lod;
+        meshGenerateParameter.mesh = mesh;
+        meshGenerateParameter.meshInfo = meshInfo;
 
-        meshInfo.vertices = new NativeArray<ExampleVertex>(meshInfo.VertexCount2D, Allocator.Persistent);
-        meshInfo.indices = new NativeArray<ushort>(meshInfo.IndiceCount, Allocator.Persistent);
+        meshGenerateParameter.vertices = new NativeArray<ExampleVertex>(meshGenerateParameter.VertexCount2D, Allocator.Persistent);
+        meshGenerateParameter.indices = new NativeArray<ushort>(meshGenerateParameter.IndiceCount, Allocator.Persistent);
     }
 
     private void ReleaseMeshInfo()
     {
-        if (meshInfo.vertices.IsCreated)
+        if (meshGenerateParameter.vertices.IsCreated)
         {
-            meshInfo.vertices.Dispose();
+            meshGenerateParameter.vertices.Dispose();
         }
-        if (meshInfo.indices.IsCreated)
+        if (meshGenerateParameter.indices.IsCreated)
         {
-            meshInfo.indices.Dispose();
+            meshGenerateParameter.indices.Dispose();
         }
     }
 
@@ -95,9 +93,9 @@ public class ProcPlaneBehaviour : MonoBehaviour
     {
         if (transform.hasChanged)
             return false;
-        if (!meshInfo.mesh || !meshInfo.indices.IsCreated || !meshInfo.vertices.IsCreated)
+        if (!meshGenerateParameter.mesh || !meshGenerateParameter.indices.IsCreated || !meshGenerateParameter.vertices.IsCreated)
             return false;
-        return meshInfo.size == size && meshInfo.lod == lod;
+        return meshGenerateParameter.meshInfo == meshInfo;
     }
 
     private float Perlin(float x, float z)

@@ -70,7 +70,8 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
     private void OnGUI()
     {
-        GUILayout.Label($"{benchTotalVerticesProcessed/ benchElaspedMilliseconds} vertices/ms");
+        if (benchElaspedMilliseconds > 0)
+            GUILayout.Label($"{benchTotalVerticesProcessed / benchElaspedMilliseconds} vertices/ms");
     }
 
     private void AllocateMeshInfo()

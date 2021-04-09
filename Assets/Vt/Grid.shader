@@ -40,12 +40,13 @@ Shader "Vt/Unlit/Grid"
             fixed4 _BaseColour;
             float _GridSpacing;
             float _LineThickness;
+            float4x4 _ObjToParent;
 
             v2f vert(appdata v)
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = mul(unity_ObjectToWorld, v.vertex).xz / _GridSpacing;
+                o.uv = mul(_ObjToParent, v.vertex).xz / _GridSpacing;
 
                 return o;
             }

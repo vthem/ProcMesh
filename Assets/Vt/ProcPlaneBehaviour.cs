@@ -42,7 +42,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
         var procPlane = obj.AddComponent<ProcPlaneBehaviour>();
         procPlane.meshInfo = createParams.meshInfo;
 
-        meshRenderer.sharedMaterial = Resources.Load(createParams.materialName) as Material;
+        meshRenderer.sharedMaterial = Resources.Load(createParams.materialName) as Material;        
         return procPlane;
     }
 
@@ -54,13 +54,24 @@ public class ProcPlaneBehaviour : MonoBehaviour
     static long benchElaspedMilliseconds = 0;
     static int benchTotalVerticesProcessed = 0;
 
+    private Matrix4x4 objToParent;
+    private Material material;
+    private Vector3 prevLocalPosition;
+
     private void Update()
     {
+        if (!material)
+            material = GetComponent<MeshRenderer>().sharedMaterial;
+        
+        GetComponent<Renderer>().material.SetMatrix("_ObjToParent", objToParent);
         if (!IsMeshInfoValid())
         {
-            transform.hasChanged = false;
             ReleaseMeshInfo();
             AllocateMeshInfo();
+
+            prevLocalPosition = transform.localPosition;
+            objToParent = Matrix4x4.TRS(transform.localPosition, Quaternion.identity, Vector3.one);
+
             SysStopwatch sw = SysStopwatch.StartNew();
             ProcPlane.Gen6(meshGenerateParameter, Perlin);
             benchElaspedMilliseconds += sw.ElapsedMilliseconds;
@@ -104,7 +115,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
     private bool IsMeshInfoValid()
     {
-        if (transform.hasChanged)
+        if (transform.localPosition != prevLocalPosition)
             return false;
         if (!meshGenerateParameter.mesh || !meshGenerateParameter.indices.IsCreated || !meshGenerateParameter.vertices.IsCreated)
             return false;
@@ -113,7 +124,9 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
     private float Perlin(float x, float z)
     {
-        var v = transform.TransformPoint(new Vector3(x, 0, z));
+        var mat = Matrix4x4.TRS(transform.localPosition, Quaternion.identity, Vector3.one);
+        var v = mat.MultiplyPoint3x4(new Vector3(x, 0, z));
+        //var v = transform.TransformPoint(new Vector3(x, 0, z));
         return Mathf.PerlinNoise(v.x, v.z);
     }
 

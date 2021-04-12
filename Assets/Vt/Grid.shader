@@ -15,7 +15,7 @@ Shader "Vt/Unlit/Grid"
         LOD 100
 
         Blend SrcAlpha OneMinusSrcAlpha
-        ZWrite Off
+        ZWrite On
 
         Pass
         {

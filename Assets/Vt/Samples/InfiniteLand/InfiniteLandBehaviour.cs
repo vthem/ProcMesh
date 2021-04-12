@@ -33,7 +33,7 @@ public static class LodDistance
     #endregion // private
 }
 
-public class Main : MonoBehaviour
+public class InfiniteLandBehaviour : MonoBehaviour
 {
     [SerializeField]
     private string meshMaterialName = "Grid";

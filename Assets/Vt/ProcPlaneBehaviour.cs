@@ -42,15 +42,28 @@ public class ProcPlaneBehaviour : MonoBehaviour
         var procPlane = obj.AddComponent<ProcPlaneBehaviour>();
         procPlane.meshInfo = createParams.meshInfo;
 
-        meshRenderer.sharedMaterial = Resources.Load(createParams.materialName) as Material;        
+        meshRenderer.sharedMaterial = Resources.Load(createParams.materialName) as Material;
         return procPlane;
     }
+
+    public int LeftLod { get => meshInfo.leftLod; set => meshInfo.leftLod = value; }
+    public int FrontLod { get => meshInfo.frontLod; set => meshInfo.frontLod = value; }
+    public int RightLod { get => meshInfo.rightLod; set => meshInfo.rightLod = value; }
+    public int BackLod { get => meshInfo.backLod; set => meshInfo.backLod = value; }
+    public int Lod { get => meshInfo.lod; set => meshInfo.lod = value; }
+    public float PerlinScale { get => perlinScale; set { perlinScale = value; perlinScaleChanged = true; } }
+    public Vector3 PerlinOffset { get => perlinOffset; set { perlinOffset = value; perlinOffsetChanged = true; } }
 
     #region private
     [SerializeField]
     private MeshInfo meshInfo;
+
+    [SerializeField]
+    private bool forceRebuild = false;
+
     private MeshGenerateParameter meshGenerateParameter;
 
+    static bool benchEnable = false;
     static long benchElaspedMilliseconds = 0;
     static int benchTotalVerticesProcessed = 0;
 
@@ -58,30 +71,51 @@ public class ProcPlaneBehaviour : MonoBehaviour
     private Material material;
     private Vector3 prevLocalPosition;
 
+    [SerializeField]
+    private float perlinScale = 1f;
+    private bool perlinScaleChanged = false;
+
+    [SerializeField]
+    private Vector3 perlinOffset = Vector3.one;
+    private bool perlinOffsetChanged = false;
+
+    private Matrix4x4 perlinMatrix;
+
     private void Update()
     {
         if (!material)
             material = GetComponent<MeshRenderer>().sharedMaterial;
-        
+
         GetComponent<Renderer>().material.SetMatrix("_ObjToParent", objToParent);
-        if (!IsMeshInfoValid())
+        if (!IsMeshInfoValid() || forceRebuild)
         {
+            perlinOffsetChanged = perlinScaleChanged = false;
+            
             ReleaseMeshInfo();
             AllocateMeshInfo();
 
             prevLocalPosition = transform.localPosition;
             objToParent = Matrix4x4.TRS(transform.localPosition, Quaternion.identity, Vector3.one);
 
-            SysStopwatch sw = SysStopwatch.StartNew();
-            ProcPlane.Gen6(meshGenerateParameter, Perlin);
-            benchElaspedMilliseconds += sw.ElapsedMilliseconds;
-            benchTotalVerticesProcessed += meshGenerateParameter.VertexCount2D;
+            perlinMatrix = Matrix4x4.TRS(perlinOffset, Quaternion.identity, Vector3.one * perlinScale) * Matrix4x4.TRS(transform.localPosition, Quaternion.identity, Vector3.one);
+
+            if (benchEnable)
+            {
+                SysStopwatch sw = SysStopwatch.StartNew();
+                ProcPlane.Gen6(meshGenerateParameter, Perlin);
+                benchElaspedMilliseconds += sw.ElapsedMilliseconds;
+                benchTotalVerticesProcessed += meshGenerateParameter.VertexCount2D;
+            }
+            else
+            {
+                ProcPlane.Gen6(meshGenerateParameter, Perlin);
+            }
         }
     }
 
     private void OnGUI()
     {
-        if (benchElaspedMilliseconds > 0)
+        if (benchEnable && benchElaspedMilliseconds > 0)
             GUILayout.Label($"{benchTotalVerticesProcessed / benchElaspedMilliseconds} vertices/ms");
     }
 
@@ -117,16 +151,14 @@ public class ProcPlaneBehaviour : MonoBehaviour
     {
         if (transform.localPosition != prevLocalPosition)
             return false;
-        if (!meshGenerateParameter.mesh || !meshGenerateParameter.indices.IsCreated || !meshGenerateParameter.vertices.IsCreated)
+        if (!meshGenerateParameter.mesh || !meshGenerateParameter.indices.IsCreated || !meshGenerateParameter.vertices.IsCreated || !perlinOffsetChanged || !perlinScaleChanged)
             return false;
         return meshGenerateParameter.meshInfo == meshInfo;
     }
 
     private float Perlin(float x, float z)
-    {
-        var mat = Matrix4x4.TRS(transform.localPosition, Quaternion.identity, Vector3.one);
-        var v = mat.MultiplyPoint3x4(new Vector3(x, 0, z));
-        //var v = transform.TransformPoint(new Vector3(x, 0, z));
+    {        
+        var v = perlinMatrix.MultiplyPoint(new Vector3(x, 0, z));
         return Mathf.PerlinNoise(v.x, v.z);
     }
 

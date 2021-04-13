@@ -72,7 +72,8 @@ public class InfiniteLandBehaviour : MonoBehaviour
                 name: $"{i}",
                 lod: lod,
                 size: Vector2.one * procPlaneSizeZ,
-                materialName: meshMaterialName
+                materialName: meshMaterialName,
+                vertexModifier: new PerlinVertexModifier()
             );
             createInfo.parent = world.transform;
 
@@ -114,14 +115,11 @@ public class InfiniteLandBehaviour : MonoBehaviour
         for (int i = 0; i < procPlanes.Length; ++i)
         {
             var procPlane = procPlanes[i];
-            if (procPlane.PerlinScale != perlinScale)
-                procPlane.PerlinScale = perlinScale;
-            if (procPlane.PerlinOffset != perlinOffset)
-                procPlane.PerlinOffset = perlinOffset;
             if (procPlane.transform.position.z < -2f * procPlaneSizeZ)
             {
                 var nextIdx = (i - 1).Modulo(procPlanes.Length);
                 procPlane.transform.localPosition = procPlanes[nextIdx].transform.localPosition + new Vector3(0, 0, procPlaneSizeZ);
+                (procPlane.VertexModifier as PerlinVertexModifier).Update(procPlane.transform.localPosition, perlinOffset, perlinScale);
             }
         }
         UpdateLods(procPlanes);

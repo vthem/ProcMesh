@@ -10,6 +10,11 @@ struct ExampleVertex
     public Vector3 pos;
 }
 
+public class VertexModifier
+{
+    public virtual Vector3 Exec(float x, float z) { return new Vector3(x, 0f, z); }
+}
+
 [Serializable]
 public struct MeshInfo
 {
@@ -47,6 +52,7 @@ struct MeshGenerateParameter
     public NativeArray<ExampleVertex> vertices;
     public NativeArray<ushort> indices;
     public MeshInfo meshInfo;
+    public VertexModifier vertexModifier;
     public int VertexCount1D => ComputeVertexCount1D(meshInfo.lod);
     public int VertexCount2D
     {
@@ -375,7 +381,7 @@ class ProcPlane
         mesh.subMeshCount = 1;
         mesh.SetSubMesh(0, new SubMeshDescriptor(0, indiceCount, MeshTopology.Triangles));
     }
-    public static void Gen6(MeshGenerateParameter gp, Func<float, float, float> height)
+    public static void Gen6(MeshGenerateParameter gp)
     {
         int xCount = gp.VertexCount1D;
         int zCount = xCount;
@@ -391,9 +397,12 @@ class ProcPlane
         var frontLod = gp.meshInfo.frontLod;
         var rightLod = gp.meshInfo.rightLod;
         var backLod = gp.meshInfo.backLod;
+        var vertexModifier = gp.vertexModifier;
+        if (vertexModifier == null)
+            return;
 
         // specify vertex count and layout
-        var layout = new[]
+            var layout = new[]
         {
             new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3)
         };
@@ -423,14 +432,14 @@ class ProcPlane
             var nLeftZ = MeshGenerateParameter.ComputeVertexCount1D(leftLod);
             var modulus = 1 + (zCount - nLeftZ) / (nLeftZ - 1);
             for (z = 0; z < zCount; z += modulus)
-                verts = ComputeVertex(verts, x, xCount, z, height, xDelta, zDelta, xStart, zStart);
+                verts = ComputeVertex(verts, x, xCount, z, vertexModifier, xDelta, zDelta, xStart, zStart);
             for (z = 0; z < zCount; z++)
                 verts = WaitedComputeVertexZ(verts, x, xCount, z, modulus);
         }
         else
         { // single pass
             for (z = 0; z < zCount; z++)
-                verts = ComputeVertex(verts, x, xCount, z, height, xDelta, zDelta, xStart, zStart);
+                verts = ComputeVertex(verts, x, xCount, z, vertexModifier, xDelta, zDelta, xStart, zStart);
         }
 
         // front
@@ -440,14 +449,14 @@ class ProcPlane
             var nFrontX = MeshGenerateParameter.ComputeVertexCount1D(frontLod);
             var modulus = 1 + (xCount - nFrontX) / (nFrontX - 1);
             for (x = 0; x < xCount; x += modulus)
-                verts = ComputeVertex(verts, x, xCount, z, height, xDelta, zDelta, xStart, zStart);
+                verts = ComputeVertex(verts, x, xCount, z, vertexModifier, xDelta, zDelta, xStart, zStart);
             for (x = 0; x < xCount; x++)
                 verts = WaitedComputeVertexX(verts, x, xCount, z, modulus);
         }
         else
         { // single pass
             for (x = 0; x < xCount; x++)
-                verts = ComputeVertex(verts, x, xCount, z, height, xDelta, zDelta, xStart, zStart);
+                verts = ComputeVertex(verts, x, xCount, z, vertexModifier, xDelta, zDelta, xStart, zStart);
         }
 
         // right
@@ -457,14 +466,14 @@ class ProcPlane
             var nRightZ = MeshGenerateParameter.ComputeVertexCount1D(rightLod);
             var modulus = 1 + (zCount - nRightZ) / (nRightZ - 1);
             for (z = 0; z < zCount; z += modulus)
-                verts = ComputeVertex(verts, x, xCount, z, height, xDelta, zDelta, xStart, zStart);
+                verts = ComputeVertex(verts, x, xCount, z, vertexModifier, xDelta, zDelta, xStart, zStart);
             for (z = 0; z < zCount; z++)
                 verts = WaitedComputeVertexZ(verts, x, xCount, z, modulus);
         }
         else
         { // single pass
             for (z = 0; z < zCount; z++)
-                verts = ComputeVertex(verts, x, xCount, z, height, xDelta, zDelta, xStart, zStart);
+                verts = ComputeVertex(verts, x, xCount, z, vertexModifier, xDelta, zDelta, xStart, zStart);
         }
 
         // back
@@ -474,20 +483,20 @@ class ProcPlane
             var nBackX = MeshGenerateParameter.ComputeVertexCount1D(backLod);
             var modulus = 1 + (xCount - nBackX) / (nBackX - 1);
             for (x = 0; x < xCount; x += modulus)
-                verts = ComputeVertex(verts, x, xCount, z, height, xDelta, zDelta, xStart, zStart);
+                verts = ComputeVertex(verts, x, xCount, z, vertexModifier, xDelta, zDelta, xStart, zStart);
             for (x = 0; x < xCount; x++)
                 verts = WaitedComputeVertexX(verts, x, xCount, z, modulus);
         }
         else
         { // single pass
             for (x = 0; x < xCount; x++)
-                verts = ComputeVertex(verts, x, xCount, z, height, xDelta, zDelta, xStart, zStart);
+                verts = ComputeVertex(verts, x, xCount, z, vertexModifier, xDelta, zDelta, xStart, zStart);
         }
 
         // center
         for (z = 1; z < zCount - 1; z++)
             for (x = 1; x < xCount - 1; x++)
-                verts = ComputeVertex(verts, x, xCount, z, height, xDelta, zDelta, xStart, zStart);
+                verts = ComputeVertex(verts, x, xCount, z, vertexModifier, xDelta, zDelta, xStart, zStart);
 
         mesh.SetVertexBufferData(verts, 0, 0, vertexCount);
         mesh.SetIndexBufferParams(indiceCount, IndexFormat.UInt16);
@@ -541,13 +550,12 @@ class ProcPlane
         return verts;
     }
 
-    private static NativeArray<ExampleVertex> ComputeVertex(NativeArray<ExampleVertex> verts, int x, int xCount, int z, Func<float, float, float> height, float xDelta, float zDelta, float xStart, float zStart)
+    private static NativeArray<ExampleVertex> ComputeVertex(NativeArray<ExampleVertex> verts, int x, int xCount, int z, VertexModifier vertexModifier, float xDelta, float zDelta, float xStart, float zStart)
     {
         var i = x + z * xCount;
         var xPos = xStart + x * xDelta;
         var zPos = zStart + z * zDelta;
-        var yPos = height(xPos, zPos);
-        verts[i] = new ExampleVertex { pos = new Vector3(xPos, yPos, zPos) };
+        verts[i] = new ExampleVertex { pos = vertexModifier.Exec(xPos, zPos) };
         return verts;
     }
 }

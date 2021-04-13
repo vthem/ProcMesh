@@ -8,16 +8,27 @@ public struct ProcPlaneCreateParameters
     public string materialName;
     public Transform parent;
     public MeshInfo meshInfo;
+    public ProcPlaneBehaviourVertexModifier vertexModifier;
 
-    public ProcPlaneCreateParameters(string name, int lod, Vector2 size, string materialName)
+    public ProcPlaneCreateParameters(string name,
+                                     int lod,
+                                     Vector2 size,
+                                     string materialName,
+                                     ProcPlaneBehaviourVertexModifier vertexModifier)
     {
         this.name = name;
         this.materialName = materialName;
+        this.vertexModifier = vertexModifier;
         meshInfo.lod = lod;
         meshInfo.size = size;
         parent = null;
         meshInfo.leftLod = meshInfo.rightLod = meshInfo.frontLod = meshInfo.backLod = -1;
     }
+}
+
+public class ProcPlaneBehaviourVertexModifier : VertexModifier
+{
+    public bool HasChanged { get; set; }
 }
 
 public class ProcPlaneBehaviour : MonoBehaviour
@@ -41,6 +52,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
         var procPlane = obj.AddComponent<ProcPlaneBehaviour>();
         procPlane.meshInfo = createParams.meshInfo;
+        procPlane.vertexModifier = createParams.vertexModifier;
 
         meshRenderer.sharedMaterial = Resources.Load(createParams.materialName) as Material;
         return procPlane;
@@ -51,8 +63,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
     public int RightLod { get => meshInfo.rightLod; set => meshInfo.rightLod = value; }
     public int BackLod { get => meshInfo.backLod; set => meshInfo.backLod = value; }
     public int Lod { get => meshInfo.lod; set => meshInfo.lod = value; }
-    public float PerlinScale { get => perlinScale; set { perlinScale = value; perlinScaleChanged = true; } }
-    public Vector3 PerlinOffset { get => perlinOffset; set { perlinOffset = value; perlinOffsetChanged = true; } }
+    public ProcPlaneBehaviourVertexModifier VertexModifier { get => vertexModifier; set => vertexModifier = value; }
 
     #region private
     [SerializeField]
@@ -69,46 +80,41 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
     private Matrix4x4 objToParent;
     private Material material;
-    private Vector3 prevLocalPosition;
-
-    [SerializeField]
-    private float perlinScale = 1f;
-    private bool perlinScaleChanged = false;
-
-    [SerializeField]
-    private Vector3 perlinOffset = Vector3.one;
-    private bool perlinOffsetChanged = false;
-
-    private Matrix4x4 perlinMatrix;
+    private ProcPlaneBehaviourVertexModifier vertexModifier;
 
     private void Update()
     {
+        if (vertexModifier == null)
+        {
+            enabled = false;
+            Debug.LogError($"{nameof(ProcPlaneBehaviour)} disabled on object {name} because vertexModifier is not set");
+            return;
+        }
+
         if (!material)
             material = GetComponent<MeshRenderer>().sharedMaterial;
 
         GetComponent<Renderer>().material.SetMatrix("_ObjToParent", objToParent);
-        if (!IsMeshInfoValid() || forceRebuild)
+        if (!IsMeshInfoValid() || forceRebuild || vertexModifier.HasChanged)
         {
-            perlinOffsetChanged = perlinScaleChanged = false;
+            vertexModifier.HasChanged = false;
             
             ReleaseMeshInfo();
             AllocateMeshInfo();
 
-            prevLocalPosition = transform.localPosition;
             objToParent = Matrix4x4.TRS(transform.localPosition, Quaternion.identity, Vector3.one);
-
-            perlinMatrix = Matrix4x4.TRS(perlinOffset, Quaternion.identity, Vector3.one * perlinScale) * Matrix4x4.TRS(transform.localPosition, Quaternion.identity, Vector3.one);
+            meshGenerateParameter.vertexModifier = vertexModifier;
 
             if (benchEnable)
             {
                 SysStopwatch sw = SysStopwatch.StartNew();
-                ProcPlane.Gen6(meshGenerateParameter, Perlin);
+                ProcPlane.Gen6(meshGenerateParameter);
                 benchElaspedMilliseconds += sw.ElapsedMilliseconds;
                 benchTotalVerticesProcessed += meshGenerateParameter.VertexCount2D;
             }
             else
             {
-                ProcPlane.Gen6(meshGenerateParameter, Perlin);
+                ProcPlane.Gen6(meshGenerateParameter);
             }
         }
     }
@@ -149,17 +155,9 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
     private bool IsMeshInfoValid()
     {
-        if (transform.localPosition != prevLocalPosition)
-            return false;
-        if (!meshGenerateParameter.mesh || !meshGenerateParameter.indices.IsCreated || !meshGenerateParameter.vertices.IsCreated || !perlinOffsetChanged || !perlinScaleChanged)
+        if (!meshGenerateParameter.mesh || !meshGenerateParameter.indices.IsCreated || !meshGenerateParameter.vertices.IsCreated)
             return false;
         return meshGenerateParameter.meshInfo == meshInfo;
-    }
-
-    private float Perlin(float x, float z)
-    {        
-        var v = perlinMatrix.MultiplyPoint(new Vector3(x, 0, z));
-        return Mathf.PerlinNoise(v.x, v.z);
     }
 
     private void OnDestroy()

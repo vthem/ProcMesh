@@ -6,6 +6,26 @@ public static class Utils
     {
         return (n % range + range) % range;
     }
+
+    public static (bool, int) SetValue(this int target, int v)
+    {
+        return (target != v, v);
+    }
+
+    public static (bool, float) SetValue(this float target, float v)
+    {
+        return (!Mathf.Approximately(target, v), v);
+    }
+
+    public static (bool, Vector3) SetValue(this Vector3 target, Vector3 v)
+    {
+        return (target != v, v);
+    }
+
+    public static float Remap(this float value, float fromBegin, float fromEnd, float toBegin, float toEnd)
+    {
+        return (value - fromBegin) / (fromEnd - fromBegin) * (toEnd - toBegin) + toBegin;
+    }
 }
 
 public static class LodDistance
@@ -71,9 +91,8 @@ public class InfiniteLandBehaviour : MonoBehaviour
             ProcPlaneCreateParameters createInfo = new ProcPlaneCreateParameters(
                 name: $"{i}",
                 lod: lod,
-                size: Vector2.one * procPlaneSizeZ,
                 materialName: meshMaterialName,
-                vertexModifier: new PerlinVertexModifier()
+                null /* vertexModifier: new PerlinVertexModifier(procPlaneSizeZ, procPlaneSizeZ) */
             );
             createInfo.parent = world.transform;
 
@@ -119,11 +138,23 @@ public class InfiniteLandBehaviour : MonoBehaviour
             {
                 var nextIdx = (i - 1).Modulo(procPlanes.Length);
                 procPlane.transform.localPosition = procPlanes[nextIdx].transform.localPosition + new Vector3(0, 0, procPlaneSizeZ);
-                (procPlane.VertexModifier as PerlinVertexModifier).Update(procPlane.transform.localPosition, perlinOffset, perlinScale);
+                //var vModifier = (procPlane.VertexModifier as PerlinVertexModifier);
+                //vModifier.PerlinOffset = perlinOffset;
+                //vModifier.LocalPosition = procPlane.transform.localPosition;
+                //vModifier.PerlinScale = perlinScale;
+                //vModifier.Update();
             }
         }
         UpdateLods(procPlanes);
     }
+
+    //public Vector3 VertexFunc(int x, int z)
+    //{
+    //    float xVal = xStart + x * xDelta;
+    //    float zVal = zStart + z * zDelta;
+    //    var v = perlinMatrix.MultiplyPoint(new Vector3(xVal, 0, zVal));
+    //    return new Vector3(xVal, Mathf.PerlinNoise(v.x, v.z), zVal);
+    //}
 
     private static void UpdateLods(ProcPlaneBehaviour[] procPlanes)
     {

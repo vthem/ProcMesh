@@ -1,3 +1,4 @@
+using System;
 using Unity.Collections;
 using UnityEngine;
 using SysStopwatch = System.Diagnostics.Stopwatch;
@@ -8,27 +9,20 @@ public struct ProcPlaneCreateParameters
     public string materialName;
     public Transform parent;
     public MeshInfo meshInfo;
-    public ProcPlaneBehaviourVertexModifier vertexModifier;
+    public Func<VertexModifier> vertexModifier;
 
     public ProcPlaneCreateParameters(string name,
                                      int lod,
-                                     Vector2 size,
                                      string materialName,
-                                     ProcPlaneBehaviourVertexModifier vertexModifier)
+                                     Func<VertexModifier> vertexModifier)
     {
         this.name = name;
         this.materialName = materialName;
         this.vertexModifier = vertexModifier;
         meshInfo.lod = lod;
-        meshInfo.size = size;
         parent = null;
         meshInfo.leftLod = meshInfo.rightLod = meshInfo.frontLod = meshInfo.backLod = -1;
     }
-}
-
-public class ProcPlaneBehaviourVertexModifier : VertexModifier
-{
-    public bool HasChanged { get; set; }
 }
 
 public class ProcPlaneBehaviour : MonoBehaviour
@@ -52,7 +46,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
         var procPlane = obj.AddComponent<ProcPlaneBehaviour>();
         procPlane.meshInfo = createParams.meshInfo;
-        procPlane.vertexModifier = createParams.vertexModifier;
+        procPlane.vertexModifierProvider = createParams.vertexModifier;
 
         meshRenderer.sharedMaterial = Resources.Load(createParams.materialName) as Material;
         return procPlane;
@@ -63,7 +57,9 @@ public class ProcPlaneBehaviour : MonoBehaviour
     public int RightLod { get => meshInfo.rightLod; set => meshInfo.rightLod = value; }
     public int BackLod { get => meshInfo.backLod; set => meshInfo.backLod = value; }
     public int Lod { get => meshInfo.lod; set => meshInfo.lod = value; }
-    public ProcPlaneBehaviourVertexModifier VertexModifier { get => vertexModifier; set => vertexModifier = value; }
+    public int XCount => meshGenerateParameter.VertexCount1D;
+    public int ZCount => meshGenerateParameter.VertexCount1D;
+    public Func<VertexModifier> VertexModifierProvider { set => vertexModifierProvider = value; }
 
     #region private
     [SerializeField]
@@ -80,11 +76,11 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
     private Matrix4x4 objToParent;
     private Material material;
-    private ProcPlaneBehaviourVertexModifier vertexModifier;
+    private Func<VertexModifier> vertexModifierProvider;
 
     private void Update()
     {
-        if (vertexModifier == null)
+        if (vertexModifierProvider == null)
         {
             enabled = false;
             Debug.LogError($"{nameof(ProcPlaneBehaviour)} disabled on object {name} because vertexModifier is not set");
@@ -95,15 +91,15 @@ public class ProcPlaneBehaviour : MonoBehaviour
             material = GetComponent<MeshRenderer>().sharedMaterial;
 
         GetComponent<Renderer>().material.SetMatrix("_ObjToParent", objToParent);
-        if (!IsMeshInfoValid() || forceRebuild || vertexModifier.HasChanged)
+        if (!IsMeshInfoValid() || forceRebuild /*|| vertexModifier.HasChanged*/)
         {
-            vertexModifier.HasChanged = false;
+            // vertexModifier.HasChanged = false;
             
             ReleaseMeshInfo();
             AllocateMeshInfo();
 
             objToParent = Matrix4x4.TRS(transform.localPosition, Quaternion.identity, Vector3.one);
-            meshGenerateParameter.vertexModifier = vertexModifier;
+            meshGenerateParameter.vertexModifier = vertexModifierProvider();
 
             if (benchEnable)
             {

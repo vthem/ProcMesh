@@ -15,8 +15,43 @@ MonoBehaviour:
   xSize: 3
   zSize: 2
   lod: 7
-  perlinOffset: {x: 0, y: 0, z: 0}
+  perlinOffset: {x: 6, y: 0, z: 5.03}
   perlinScale: 2.63
-  localPosition: {x: 0, y: 0, z: 0}
-  windForce: 5
-  yScale: 0.38
+  localPosition: {x: -6.2, y: 10.52, z: 3.4}
+  windForce: 4.25
+  yScale: 0.26
+  minXPerlinScale: 0.16
+  maxXPerlinScale: 0.76
+  xPerlinScale:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 2.8807464
+      outSlope: 2.8807464
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.74715316
+      value: 2.1523588
+      inSlope: -0.015850985
+      outSlope: -0.015850985
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.5713264
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1.0554688
+      value: 0.65546334
+      inSlope: -4.855075
+      outSlope: -4.855075
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

@@ -8,6 +8,7 @@ using UnityEngine.Rendering;
 struct ExampleVertex
 {
     public Vector3 pos;
+    public Vector2 uv;
 }
 
 [Serializable]
@@ -55,7 +56,7 @@ class ProcPlane
         // specify vertex count and layout
         var layout = new[]
         {
-            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3)
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3)            
         };
         var vertexCount = 4;
         mesh.SetVertexBufferParams(vertexCount, layout);
@@ -376,7 +377,8 @@ class ProcPlane
         // specify vertex count and layout
         var layout = new[]
         {
-            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3)
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
         };
         mesh.SetVertexBufferParams(vertexCount, layout);
 
@@ -498,7 +500,10 @@ class ProcPlane
             return verts;
         var prevKnown = (x - remainder) + z * xCount; // i - remainder
         var nextKnown = (x - remainder + modulus) + z * xCount; // i - remainder + modulus
-        verts[i] = new ExampleVertex { pos = verts[prevKnown].pos + (verts[nextKnown].pos - verts[prevKnown].pos) * remainder / (float)modulus };
+        verts[i] = new ExampleVertex {
+            pos = verts[prevKnown].pos + (verts[nextKnown].pos - verts[prevKnown].pos) * remainder / (float)modulus,
+            uv = new Vector2(x / (float)(xCount - 1), z / (float)(xCount - 1))
+        };
         return verts;
     }
 
@@ -510,7 +515,10 @@ class ProcPlane
             return verts;
         var prevKnown = x + (z - remainder) * xCount; // i - remainder
         var nextKnown = x + (z - remainder + modulus) * xCount; // i - remainder + modulus
-        verts[i] = new ExampleVertex { pos = verts[prevKnown].pos + (verts[nextKnown].pos - verts[prevKnown].pos) * remainder / (float)modulus };
+        verts[i] = new ExampleVertex {
+            pos = verts[prevKnown].pos + (verts[nextKnown].pos - verts[prevKnown].pos) * remainder / (float)modulus,
+            uv = new Vector2(x / (float)(xCount - 1), z / (float)(xCount - 1))
+        };
         return verts;
     }
 
@@ -519,7 +527,10 @@ class ProcPlane
         var i = x + z * xCount;
         //var xPos = xStart + x * xDelta;
         //var zPos = zStart + z * zDelta;
-        verts[i] = new ExampleVertex { pos = vertexModifier.Vertex(x, z) };
+        verts[i] = new ExampleVertex {
+            pos = vertexModifier.Vertex(x, z),
+            uv = new Vector2(x / (float)(xCount-1), z / (float)(xCount-1))
+        };
         return verts;
     }
 }

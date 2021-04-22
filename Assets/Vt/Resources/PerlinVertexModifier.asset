@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b0ed5a5deecf4447a6fcfcb1cba10bc, type: 3}
   m_Name: PerlinVertexModifier
   m_EditorClassIdentifier: 
-  xSize: 10
+  xSize: 19.6
   zSize: 10
   lod: 7
   perlinOffset: {x: 134.9, y: 2.2, z: 40.02}

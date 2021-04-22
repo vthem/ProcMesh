@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4739254f16b354e46a030cba9da9215d, type: 3}
   m_Name: VertexModifier
   m_EditorClassIdentifier: 
-  xSize: 1
-  zSize: 1
+  xSize: 2
+  zSize: 2
   lod: 1

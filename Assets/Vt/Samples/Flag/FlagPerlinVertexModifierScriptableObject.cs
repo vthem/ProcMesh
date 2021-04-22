@@ -5,13 +5,12 @@ public class FlagPerlinVertexModifierScriptableObject : PerlinVertexModifierScri
 {
     [SerializeField][Range(1f, 5f)] protected float windForce = 5f;
     [SerializeField] [Range(0f, 5f)] protected float yScale = 1f;
+    [SerializeField] protected AnimationCurve xPerlinScale;
 
     public override Vector3 Vertex(int x, int z)
     {
-        var pScale = this.perlinScale * (x / (float)VertexCount1D).Remap(0f, 1f, 0.333f, 1.333f);
+        var pScale = xPerlinScale.Evaluate(x / (float)(VertexCount1D-1));
         perlinMatrix = Matrix4x4.TRS(perlinOffset + new Vector3(Time.time * -windForce, 0, 0), Quaternion.identity, Vector3.one * pScale);
-        // * Matrix4x4.TRS(localPosition, Quaternion.identity, Vector3.one);
-
         float xVal = xStart + x * xDelta;
         float zVal = zStart + z * zDelta;
         var v = perlinMatrix.MultiplyPoint(new Vector3(xVal, 0, zVal));

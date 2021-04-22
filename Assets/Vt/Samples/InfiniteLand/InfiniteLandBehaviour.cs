@@ -75,47 +75,47 @@ public class InfiniteLandBehaviour : MonoBehaviour
 
     private void Start()
     {
-        GameObject world = new GameObject("World");
-        worldTransform = world.transform;
+        //GameObject world = new GameObject("World");
+        //worldTransform = world.transform;
 
-        int procPlaneCount = 6;
-        int maxLod = 7;
+        //int procPlaneCount = 6;
+        //int maxLod = 7;
 
-        ProcPlaneCreateParameters[] procPlaneCreateInfos = new ProcPlaneCreateParameters[procPlaneCount];
-        for (int i = 0; i < procPlaneCount; ++i)
-        {
-            int lod = maxLod;
-            if (maxLod > 0)
-                maxLod--;
+        //ProcPlaneCreateParameters[] procPlaneCreateInfos = new ProcPlaneCreateParameters[procPlaneCount];
+        //for (int i = 0; i < procPlaneCount; ++i)
+        //{
+        //    int lod = maxLod;
+        //    if (maxLod > 0)
+        //        maxLod--;
 
-            ProcPlaneCreateParameters createInfo = new ProcPlaneCreateParameters(
-                name: $"{i}",
-                lod: lod,
-                materialName: meshMaterialName,
-                null /* vertexModifier: new PerlinVertexModifier(procPlaneSizeZ, procPlaneSizeZ) */
-            );
-            createInfo.parent = world.transform;
+        //    ProcPlaneCreateParameters createInfo = new ProcPlaneCreateParameters(
+        //        name: $"{i}",
+        //        lod: lod,
+        //        materialName: meshMaterialName,
+        //        null /* vertexModifier: new PerlinVertexModifier(procPlaneSizeZ, procPlaneSizeZ) */
+        //    );
+        //    createInfo.parent = world.transform;
 
-            procPlaneCreateInfos[i] = createInfo;
-        }
+        //    procPlaneCreateInfos[i] = createInfo;
+        //}
 
-        procPlanes = new ProcPlaneBehaviour[procPlaneCount];
-        for (int i = 0; i < procPlaneCount; ++i)
-        {
-            int lod = maxLod;
-            if (maxLod > 0)
-                maxLod--;
+        //procPlanes = new ProcPlaneBehaviour[procPlaneCount];
+        //for (int i = 0; i < procPlaneCount; ++i)
+        //{
+        //    int lod = maxLod;
+        //    if (maxLod > 0)
+        //        maxLod--;
 
-            ProcPlaneCreateParameters createInfo = procPlaneCreateInfos[i];
-            if (i < procPlaneCount - 1)
-                createInfo.meshInfo.frontLod = procPlaneCreateInfos[i + 1].meshInfo.lod;
-            if (i > 0)
-                createInfo.meshInfo.backLod = procPlaneCreateInfos[i - 1].meshInfo.lod;
+        //    ProcPlaneCreateParameters createInfo = procPlaneCreateInfos[i];
+        //    if (i < procPlaneCount - 1)
+        //        createInfo.lodInfo.frontLod = procPlaneCreateInfos[i + 1].lodInfo.lod;
+        //    if (i > 0)
+        //        createInfo.lodInfo.backLod = procPlaneCreateInfos[i - 1].lodInfo.lod;
 
-            var procPlane = ProcPlaneBehaviour.Create(createInfo);
-            procPlane.transform.localPosition = new Vector3(0, 0, procPlaneSizeZ * i);
-            procPlanes[i] = procPlane;
-        }
+        //    var procPlane = ProcPlaneBehaviour.Create(createInfo);
+        //    procPlane.transform.localPosition = new Vector3(0, 0, procPlaneSizeZ * i);
+        //    procPlanes[i] = procPlane;
+        //}
     }
 
     private void Update()
@@ -158,20 +158,20 @@ public class InfiniteLandBehaviour : MonoBehaviour
 
     private static void UpdateLods(ProcPlaneBehaviour[] procPlanes)
     {
-        for (int cur = 0; cur < procPlanes.Length; ++cur)
-        {
-            var curPlane = procPlanes[cur];
-            curPlane.Lod = LodDistance.GetLod(curPlane.transform.position.z);
-        }
-        for (int cur = 0; cur < procPlanes.Length; ++cur)
-        {
-            var prev = (cur-1).Modulo(procPlanes.Length);
-            var next = (cur+1).Modulo(procPlanes.Length);
-            var curPlane = procPlanes[cur];
-            var prevPlane = procPlanes[prev];
-            var nextPlane = procPlanes[next];
-            curPlane.FrontLod = nextPlane.Lod;
-            curPlane.BackLod = prevPlane.Lod;
-        }
+    //    for (int cur = 0; cur < procPlanes.Length; ++cur)
+    //    {
+    //        var curPlane = procPlanes[cur];
+    //        curPlane.Lod = LodDistance.GetLod(curPlane.transform.position.z);
+    //    }
+    //    for (int cur = 0; cur < procPlanes.Length; ++cur)
+    //    {
+    //        var prev = (cur-1).Modulo(procPlanes.Length);
+    //        var next = (cur+1).Modulo(procPlanes.Length);
+    //        var curPlane = procPlanes[cur];
+    //        var prevPlane = procPlanes[prev];
+    //        var nextPlane = procPlanes[next];
+    //        curPlane.FrontLod = nextPlane.Lod;
+    //        curPlane.BackLod = prevPlane.Lod;
+    //    }
     }
 }

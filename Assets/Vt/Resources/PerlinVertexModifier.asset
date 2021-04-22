@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b0ed5a5deecf4447a6fcfcb1cba10bc, type: 3}
+  m_Name: PerlinVertexModifier
+  m_EditorClassIdentifier: 
+  xSize: 10
+  zSize: 10
+  lod: 7
+  perlinOffset: {x: 134.9, y: 2.2, z: 40.02}
+  perlinScale: 0.5
+  localPosition: {x: 6.96, y: 0, z: 0}

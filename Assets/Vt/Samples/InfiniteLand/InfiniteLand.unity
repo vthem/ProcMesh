@@ -155,15 +155,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   meshInfo:
-    lod: 1
-    size: {x: 2, y: 2}
     leftLod: 0
     frontLod: 0
     rightLod: 0
     backLod: 3
   forceRebuild: 0
-  perlinScale: 1
-  perlinOffset: {x: 1, y: 1, z: 1}
+  customVertexModifier: {fileID: 0}
 --- !u!23 &54163374
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -342,15 +339,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   meshInfo:
-    lod: 5
-    size: {x: 2, y: 2}
     leftLod: 0
     frontLod: 0
     rightLod: 0
     backLod: 0
   forceRebuild: 1
-  perlinScale: 1
-  perlinOffset: {x: 1, y: 1, z: 1}
+  customVertexModifier: {fileID: 0}
 --- !u!23 &1317558772
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -444,10 +438,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   meshMaterialName: Grid
-  moveWorldSpeed: 1
+  moveWorldSpeed: 0
   procPlaneSizeZ: 20
-  perlinScale: 0.564
-  perlinOffset: {x: 10, y: 1, z: 1}
+  perlinModifier: {fileID: 11400000, guid: ba70732f4063e4d42a48a42f1bcd84e5, type: 2}
 --- !u!4 &1908362695
 Transform:
   m_ObjectHideFlags: 0

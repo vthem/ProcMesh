@@ -22,11 +22,16 @@ public class PerlinVertexModifierScriptableObject : VertexModifierScriptableObje
         return new Vector3(xVal, Mathf.PerlinNoise(v.x, v.z), zVal);
     }
 
+    public Vector3 PerlinOffset { get => perlinOffset; set => perlinOffset = value; }
+    public float PerlinScale { get => perlinScale; set => perlinScale = value; }
+    public Vector3 LocalPosition { get => localPosition; set => localPosition = value; }
+
     #region private
     [SerializeField] protected Vector3 perlinOffset;
     [SerializeField] protected float perlinScale;
     [SerializeField] protected Vector3 localPosition;
 
     protected Matrix4x4 perlinMatrix;
+
     #endregion // private
 }

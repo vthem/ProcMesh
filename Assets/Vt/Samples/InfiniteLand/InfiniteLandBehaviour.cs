@@ -1,33 +1,5 @@
 using UnityEngine;
 
-public static class Utils
-{
-    public static int Modulo(this int n, int range)
-    {
-        return (n % range + range) % range;
-    }
-
-    public static (bool, int) SetValue(this int target, int v)
-    {
-        return (target != v, v);
-    }
-
-    public static (bool, float) SetValue(this float target, float v)
-    {
-        return (!Mathf.Approximately(target, v), v);
-    }
-
-    public static (bool, Vector3) SetValue(this Vector3 target, Vector3 v)
-    {
-        return (target != v, v);
-    }
-
-    public static float Remap(this float value, float fromBegin, float fromEnd, float toBegin, float toEnd)
-    {
-        return (value - fromBegin) / (fromEnd - fromBegin) * (toEnd - toBegin) + toBegin;
-    }
-}
-
 public static class LodDistance
 {
     public static int GetLod(float distance)
@@ -61,117 +33,127 @@ public class InfiniteLandBehaviour : MonoBehaviour
     [SerializeField]
     private float moveWorldSpeed = 1f;
 
-    [SerializeField]
-    private float procPlaneSizeZ = 10f;
-
-    [SerializeField]
-    private float perlinScale = 1f;
-
-    [SerializeField]
-    private Vector3 perlinOffset = Vector3.one;
+    [SerializeField] protected Vector3 perlinOffset = Vector3.one;
+    [SerializeField] protected float perlinScale = 1f;
+    [SerializeField] protected float xSize = 10f;
+    [SerializeField] protected float zSize = 10f;
 
     private ProcPlaneBehaviour[] procPlanes;
     private Transform worldTransform;
+    private bool forceUpdate = false;
 
     private void Start()
     {
-        //GameObject world = new GameObject("World");
-        //worldTransform = world.transform;
+        GameObject world = new GameObject("World");
+        worldTransform = world.transform;
 
-        //int procPlaneCount = 6;
-        //int maxLod = 7;
+        int procPlaneCount = 6;
+        int maxLod = 7;
 
-        //ProcPlaneCreateParameters[] procPlaneCreateInfos = new ProcPlaneCreateParameters[procPlaneCount];
-        //for (int i = 0; i < procPlaneCount; ++i)
-        //{
-        //    int lod = maxLod;
-        //    if (maxLod > 0)
-        //        maxLod--;
+        ProcPlaneCreateParameters[] procPlaneCreateInfos = new ProcPlaneCreateParameters[procPlaneCount];
+        for (int i = 0; i < procPlaneCount; ++i)
+        {
+            int lod = maxLod;
+            if (maxLod > 0)
+                maxLod--;
 
-        //    ProcPlaneCreateParameters createInfo = new ProcPlaneCreateParameters(
-        //        name: $"{i}",
-        //        lod: lod,
-        //        materialName: meshMaterialName,
-        //        null /* vertexModifier: new PerlinVertexModifier(procPlaneSizeZ, procPlaneSizeZ) */
-        //    );
-        //    createInfo.parent = world.transform;
+            var vm = ScriptableObject.CreateInstance<PerlinVertexModifierScriptableObject>();
+            vm.Lod = lod;
+            vm.PerlinOffset = perlinOffset;
+            vm.PerlinScale = perlinScale;
+            vm.XSize = xSize;
+            vm.ZSize = zSize;
+            vm.HasChanged = true;
+            ProcPlaneCreateParameters createInfo = new ProcPlaneCreateParameters(
+                name: $"{i}",
+                materialName: meshMaterialName,
+                vertexModifier: vm
+            ); ;
+            createInfo.parent = world.transform;
 
-        //    procPlaneCreateInfos[i] = createInfo;
-        //}
+            procPlaneCreateInfos[i] = createInfo;
+        }
 
-        //procPlanes = new ProcPlaneBehaviour[procPlaneCount];
-        //for (int i = 0; i < procPlaneCount; ++i)
-        //{
-        //    int lod = maxLod;
-        //    if (maxLod > 0)
-        //        maxLod--;
+        procPlanes = new ProcPlaneBehaviour[procPlaneCount];
+        for (int i = 0; i < procPlaneCount; ++i)
+        {
+            int lod = maxLod;
+            if (maxLod > 0)
+                maxLod--;
 
-        //    ProcPlaneCreateParameters createInfo = procPlaneCreateInfos[i];
-        //    if (i < procPlaneCount - 1)
-        //        createInfo.lodInfo.frontLod = procPlaneCreateInfos[i + 1].lodInfo.lod;
-        //    if (i > 0)
-        //        createInfo.lodInfo.backLod = procPlaneCreateInfos[i - 1].lodInfo.lod;
+            ProcPlaneCreateParameters createInfo = procPlaneCreateInfos[i];
+            if (i < procPlaneCount - 1)
+                createInfo.lodInfo.frontLod = procPlaneCreateInfos[i + 1].vertexModifier.Lod;
+            if (i > 0)
+                createInfo.lodInfo.backLod = procPlaneCreateInfos[i - 1].vertexModifier.Lod;
 
-        //    var procPlane = ProcPlaneBehaviour.Create(createInfo);
-        //    procPlane.transform.localPosition = new Vector3(0, 0, procPlaneSizeZ * i);
-        //    procPlanes[i] = procPlane;
-        //}
+            var procPlane = ProcPlaneBehaviour.Create(createInfo);
+            procPlane.transform.localPosition = new Vector3(0, 0, zSize * i);
+            procPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().LocalPosition = procPlane.transform.localPosition;
+            procPlanes[i] = procPlane;
+        }
     }
 
     private void Update()
     {
-        MoveWorld(worldTransform, moveWorldSpeed);
-        UpdateProcPlane(procPlanes, procPlaneSizeZ, perlinScale, perlinOffset);
+        MoveWorld(procPlanes, worldTransform, zSize, moveWorldSpeed);
+        UpdateProcPlane(procPlanes, xSize, zSize, perlinScale, perlinOffset, forceUpdate);
+        forceUpdate = false;
     }
 
-    private static void MoveWorld(Transform transform, float speed)
+    private static void MoveWorld(ProcPlaneBehaviour[] procPlanes, Transform transform, float zSize, float speed)
     {
         transform.localPosition += new Vector3(0, 0, -1) * speed * Time.deltaTime;
-    }
-
-    private static void UpdateProcPlane(ProcPlaneBehaviour[] procPlanes, float procPlaneSizeZ, float perlinScale, Vector3 perlinOffset)
-    {
         for (int i = 0; i < procPlanes.Length; ++i)
         {
             var procPlane = procPlanes[i];
-            if (procPlane.transform.position.z < -2f * procPlaneSizeZ)
+            if (procPlane.transform.position.z < -2f * zSize)
             {
                 var nextIdx = (i - 1).Modulo(procPlanes.Length);
-                procPlane.transform.localPosition = procPlanes[nextIdx].transform.localPosition + new Vector3(0, 0, procPlaneSizeZ);
-                //var vModifier = (procPlane.VertexModifier as PerlinVertexModifier);
-                //vModifier.PerlinOffset = perlinOffset;
-                //vModifier.LocalPosition = procPlane.transform.localPosition;
-                //vModifier.PerlinScale = perlinScale;
-                //vModifier.Update();
+                procPlane.transform.localPosition = procPlanes[nextIdx].transform.localPosition + new Vector3(0, 0, zSize);
+                procPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().LocalPosition = procPlane.transform.localPosition;
             }
         }
         UpdateLods(procPlanes);
     }
 
-    //public Vector3 VertexFunc(int x, int z)
-    //{
-    //    float xVal = xStart + x * xDelta;
-    //    float zVal = zStart + z * zDelta;
-    //    var v = perlinMatrix.MultiplyPoint(new Vector3(xVal, 0, zVal));
-    //    return new Vector3(xVal, Mathf.PerlinNoise(v.x, v.z), zVal);
-    //}
+    private static void UpdateProcPlane(ProcPlaneBehaviour[] procPlanes, float xSize, float zSize, float perlinScale, Vector3 perlinOffset, bool forceUpdate)
+    {
+        for (int i = 0; i < procPlanes.Length; ++i)
+        {
+            var procPlane = procPlanes[i];
+            if (forceUpdate)
+            {
+                procPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().PerlinOffset = perlinOffset;
+                procPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().PerlinScale = perlinScale;
+                procPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().XSize = xSize;
+                procPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().ZSize = zSize;
+                procPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().HasChanged = true;
+            }
+        }
+    }
 
     private static void UpdateLods(ProcPlaneBehaviour[] procPlanes)
     {
-    //    for (int cur = 0; cur < procPlanes.Length; ++cur)
-    //    {
-    //        var curPlane = procPlanes[cur];
-    //        curPlane.Lod = LodDistance.GetLod(curPlane.transform.position.z);
-    //    }
-    //    for (int cur = 0; cur < procPlanes.Length; ++cur)
-    //    {
-    //        var prev = (cur-1).Modulo(procPlanes.Length);
-    //        var next = (cur+1).Modulo(procPlanes.Length);
-    //        var curPlane = procPlanes[cur];
-    //        var prevPlane = procPlanes[prev];
-    //        var nextPlane = procPlanes[next];
-    //        curPlane.FrontLod = nextPlane.Lod;
-    //        curPlane.BackLod = prevPlane.Lod;
-    //    }
+        for (int cur = 0; cur < procPlanes.Length; ++cur)
+        {
+            var curPlane = procPlanes[cur];
+            curPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().Lod = LodDistance.GetLod(curPlane.transform.position.z);
+        }
+        for (int cur = 0; cur < procPlanes.Length; ++cur)
+        {
+            var prev = (cur - 1).Modulo(procPlanes.Length);
+            var next = (cur + 1).Modulo(procPlanes.Length);
+            var curPlane = procPlanes[cur];
+            var prevPlane = procPlanes[prev];
+            var nextPlane = procPlanes[next];
+            curPlane.FrontLod = nextPlane.VertexModifier.Lod;
+            curPlane.BackLod = prevPlane.VertexModifier.Lod;
+        }
+    }
+
+    private void OnValidate()
+    {
+        forceUpdate = true;
     }
 }

@@ -14,14 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   xSize: 3
   zSize: 2
-  lod: 7
+  lod: 4
   perlinOffset: {x: 6, y: 0, z: 5.03}
   perlinScale: 2.63
   localPosition: {x: -6.2, y: 10.52, z: 3.4}
   windForce: 4.25
   yScale: 0.26
-  minXPerlinScale: 0.16
-  maxXPerlinScale: 0.76
   xPerlinScale:
     serializedVersion: 2
     m_Curve:

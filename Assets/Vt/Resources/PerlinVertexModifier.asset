@@ -16,5 +16,5 @@ MonoBehaviour:
   zSize: 10
   lod: 7
   perlinOffset: {x: 134.9, y: 2.2, z: 40.02}
-  perlinScale: 0.5
-  localPosition: {x: 6.96, y: 0, z: 0}
+  perlinScale: 2.39
+  localPosition: {x: 2.35, y: 0, z: 0}

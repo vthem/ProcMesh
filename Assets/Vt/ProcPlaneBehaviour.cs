@@ -12,7 +12,6 @@ public struct ProcPlaneCreateParameters
     public IVertexModifier vertexModifier;
 
     public ProcPlaneCreateParameters(string name,
-                                     int lod,
                                      string materialName,
                                      IVertexModifier vertexModifier)
     {
@@ -44,8 +43,15 @@ public class ProcPlaneBehaviour : MonoBehaviour
         mesh.MarkDynamic();
 
         var procPlane = obj.AddComponent<ProcPlaneBehaviour>();
-        procPlane.meshInfo = createParams.lodInfo;
+        if (procPlane.vertexModifier != null)
+        {
+            var vertexModifierUnityObject = procPlane.vertexModifier as UnityEngine.Object;
+            if (vertexModifierUnityObject)
+                Destroy(vertexModifierUnityObject);
+        }
         procPlane.vertexModifier = createParams.vertexModifier;
+        var customVertexModifier = createParams.vertexModifier as VertexModifierScriptableObject;
+        procPlane.customVertexModifier = customVertexModifier;
 
         meshRenderer.sharedMaterial = Resources.Load(createParams.materialName) as Material;
         return procPlane;
@@ -56,6 +62,11 @@ public class ProcPlaneBehaviour : MonoBehaviour
     public int RightLod { get => meshInfo.rightLod; set => meshInfo.rightLod = value; }
     public int BackLod { get => meshInfo.backLod; set => meshInfo.backLod = value; }
     public IVertexModifier VertexModifier { get => vertexModifier; set => vertexModifier = value; }
+
+    public T GetVertexModifierAs<T>() where T : class
+    {
+        return vertexModifier as T;
+    }
 
     #region private
     [SerializeField]
@@ -78,16 +89,25 @@ public class ProcPlaneBehaviour : MonoBehaviour
     private Material material;
     private bool forceRebuildOnce = false;
 
+    private void Awake()
+    {
+        if (customVertexModifier)
+            vertexModifier = customVertexModifier;
+        else
+            vertexModifier = ScriptableObject.CreateInstance<VertexModifierScriptableObject>();
+    }
+
     private void Update()
     {
         if (!material)
             material = GetComponent<MeshRenderer>().sharedMaterial;
 
         material.SetMatrix("_ObjToParent", objToParent);
-        if (!IsMeshInfoValid() || forceRebuild || customVertexModifier.HasChanged || forceRebuildOnce)
+        if (!IsMeshInfoValid() || forceRebuild || (customVertexModifier && customVertexModifier.HasChanged) || forceRebuildOnce)
         {
             forceRebuildOnce = true;
-            customVertexModifier.HasChanged = false;
+            if (customVertexModifier)
+                customVertexModifier.HasChanged = false;
 
             ReleaseMeshInfo();
             AllocateMeshInfo();
@@ -124,14 +144,6 @@ public class ProcPlaneBehaviour : MonoBehaviour
         }
         mesh.MarkDynamic();
         meshGenerateParameter.mesh = mesh;
-        if (vertexModifier == null)
-        {
-            vertexModifier = customVertexModifier;
-        }
-        if (vertexModifier == null)
-        {
-            vertexModifier = ScriptableObject.CreateInstance<VertexModifierScriptableObject>();
-        }
         meshGenerateParameter.vertexModifier = vertexModifier;
         meshGenerateParameter.lodInfo = meshInfo;
 

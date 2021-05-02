@@ -118,21 +118,21 @@ public class ProcPlaneBehaviour : MonoBehaviour
             if (benchEnable)
             {
                 SysStopwatch sw = SysStopwatch.StartNew();
-                ProcPlane.Gen6(meshGenerateParameter);
+                ProceduralPlaneMesh.Generate(meshGenerateParameter);
                 benchElaspedMilliseconds += sw.ElapsedMilliseconds;
                 benchTotalVerticesProcessed += customVertexModifier.VertexCount2D;
             }
             else
             {
-                ProcPlane.Gen6(meshGenerateParameter);
+                ProceduralPlaneMesh.Generate(meshGenerateParameter);
             }
         }
     }
 
     private void OnGUI()
     {
-        if (benchEnable && benchElaspedMilliseconds > 0)
-            GUILayout.Label($"{benchTotalVerticesProcessed / benchElaspedMilliseconds} vertices/ms");
+        //if (benchEnable && benchElaspedMilliseconds > 0)
+        //    GUILayout.Label($"{benchTotalVerticesProcessed / benchElaspedMilliseconds} vertices/ms");
     }
 
     private void AllocateMeshInfo()

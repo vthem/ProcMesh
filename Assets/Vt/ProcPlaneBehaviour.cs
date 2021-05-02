@@ -49,6 +49,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
             if (vertexModifierUnityObject)
                 Destroy(vertexModifierUnityObject);
         }
+        procPlane.lodInfo = createParams.lodInfo;
         procPlane.vertexModifier = createParams.vertexModifier;
         var customVertexModifier = createParams.vertexModifier as VertexModifierScriptableObject;
         procPlane.customVertexModifier = customVertexModifier;
@@ -57,10 +58,10 @@ public class ProcPlaneBehaviour : MonoBehaviour
         return procPlane;
     }
 
-    public int LeftLod { get => meshInfo.leftLod; set => meshInfo.leftLod = value; }
-    public int FrontLod { get => meshInfo.frontLod; set => meshInfo.frontLod = value; }
-    public int RightLod { get => meshInfo.rightLod; set => meshInfo.rightLod = value; }
-    public int BackLod { get => meshInfo.backLod; set => meshInfo.backLod = value; }
+    public int LeftLod { get => lodInfo.leftLod; set => lodInfo.leftLod = value; }
+    public int FrontLod { get => lodInfo.frontLod; set => lodInfo.frontLod = value; }
+    public int RightLod { get => lodInfo.rightLod; set => lodInfo.rightLod = value; }
+    public int BackLod { get => lodInfo.backLod; set => lodInfo.backLod = value; }
     public IVertexModifier VertexModifier { get => vertexModifier; set => vertexModifier = value; }
 
     public T GetVertexModifierAs<T>() where T : class
@@ -70,7 +71,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
     #region private
     [SerializeField]
-    private MeshLodInfo meshInfo;
+    private MeshLodInfo lodInfo;
 
     [SerializeField]
     private bool forceRebuild = false;
@@ -145,7 +146,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
         mesh.MarkDynamic();
         meshGenerateParameter.mesh = mesh;
         meshGenerateParameter.vertexModifier = vertexModifier;
-        meshGenerateParameter.lodInfo = meshInfo;
+        meshGenerateParameter.lodInfo = lodInfo;
 
         meshGenerateParameter.vertices = new NativeArray<ExampleVertex>(vertexModifier.VertexCount2D, Allocator.Persistent);
         meshGenerateParameter.indices = new NativeArray<ushort>(vertexModifier.IndiceCount, Allocator.Persistent);
@@ -167,7 +168,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
     {
         if (!meshGenerateParameter.mesh || !meshGenerateParameter.indices.IsCreated || !meshGenerateParameter.vertices.IsCreated)
             return false;
-        return meshGenerateParameter.lodInfo == meshInfo;
+        return meshGenerateParameter.lodInfo == lodInfo;
     }
 
     private void OnDestroy()

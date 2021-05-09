@@ -104,9 +104,9 @@ public class ProcPlaneBehaviour : MonoBehaviour
             material = GetComponent<MeshRenderer>().sharedMaterial;
 
         material.SetMatrix("_ObjToParent", objToParent);
-        if (!IsMeshInfoValid() || forceRebuild || (customVertexModifier && customVertexModifier.HasChanged) || forceRebuildOnce)
+        if (!IsMeshInfoValid() || forceRebuild || (vertexModifier.HasChanged) || forceRebuildOnce)
         {
-            forceRebuildOnce = true;
+            forceRebuildOnce = false;
             if (customVertexModifier)
                 customVertexModifier.HasChanged = false;
 

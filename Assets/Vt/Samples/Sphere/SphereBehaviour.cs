@@ -67,6 +67,7 @@ public class SphereBehaviour : MonoBehaviour
                 procPlanes[i].GetVertexModifierAs<SphereVertexModifier>().ZSize = Mathf.Max(1, radius);
                 procPlanes[i].GetVertexModifierAs<SphereVertexModifier>().radius = radius;
                 procPlanes[i].GetVertexModifierAs<SphereVertexModifier>().sphereRatio = sphereRatio;
+                procPlanes[i].GetVertexModifierAs<SphereVertexModifier>().HasChanged = true;
             }
         }
     }

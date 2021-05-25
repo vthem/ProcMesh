@@ -1,5 +1,8 @@
 using System;
 using Unity.Collections;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 using SysStopwatch = System.Diagnostics.Stopwatch;
 
@@ -23,6 +26,7 @@ public struct ProcPlaneCreateParameters
     }
 }
 
+[ExecuteInEditMode]
 public class ProcPlaneBehaviour : MonoBehaviour
 {
     public static ProcPlaneBehaviour Create(ProcPlaneCreateParameters createParams)
@@ -43,12 +47,6 @@ public class ProcPlaneBehaviour : MonoBehaviour
         mesh.MarkDynamic();
 
         var procPlane = obj.AddComponent<ProcPlaneBehaviour>();
-        if (procPlane.vertexModifier != null)
-        {
-            var vertexModifierUnityObject = procPlane.vertexModifier as UnityEngine.Object;
-            if (vertexModifierUnityObject)
-                Destroy(vertexModifierUnityObject);
-        }
         procPlane.lodInfo = createParams.lodInfo;
         procPlane.vertexModifier = createParams.vertexModifier;
         var customVertexModifier = createParams.vertexModifier as VertexModifierScriptableObject;
@@ -90,18 +88,16 @@ public class ProcPlaneBehaviour : MonoBehaviour
     private Material material;
     private bool forceRebuildOnce = false;
 
-    private void Awake()
-    {
-        if (customVertexModifier)
-            vertexModifier = customVertexModifier;
-        else
-            vertexModifier = ScriptableObject.CreateInstance<VertexModifierScriptableObject>();
-    }
-
     private void Update()
     {
         if (!material)
             material = GetComponent<MeshRenderer>().sharedMaterial;
+
+        if (null == vertexModifier)
+        {
+            customVertexModifier = ScriptableObject.CreateInstance<VertexModifierScriptableObject>(); ;
+            vertexModifier = customVertexModifier;
+        }
 
         material.SetMatrix("_ObjToParent", objToParent);
         if (!IsMeshInfoValid() || forceRebuild || (vertexModifier.HasChanged) || forceRebuildOnce)
@@ -180,5 +176,23 @@ public class ProcPlaneBehaviour : MonoBehaviour
     {
         forceRebuildOnce = true;
     }
-    #endregion // private
+
+#if UNITY_EDITOR
+    [MenuItem("GameObject/3D Object/Vt/Create ProceduralPlane", false, 0)]
+    static void CreateCustomGameObject(MenuCommand menuCommand)
+    {
+        ProcPlaneCreateParameters createInfo = new ProcPlaneCreateParameters(
+            name: "ProceduralPlane",
+            materialName: "Grid",
+            vertexModifier: null
+        );
+        var procPlane = ProcPlaneBehaviour.Create(createInfo);
+        // Ensure it gets reparented if this was a context click (otherwise does nothing)
+        GameObjectUtility.SetParentAndAlign(procPlane.gameObject, menuCommand.context as GameObject);
+        // Register the creation in the undo system
+        Undo.RegisterCreatedObjectUndo(procPlane.gameObject, "Create " + procPlane.gameObject.name);
+        Selection.activeObject = procPlane.gameObject;
+    }
+#endif
+#endregion // private
 }

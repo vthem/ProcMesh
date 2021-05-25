@@ -27,3 +27,16 @@ public static class Utils
         return (value - fromBegin) / (fromEnd - fromBegin) * (toEnd - toBegin) + toBegin;
     }
 }
+
+public static class UnityExt
+{
+    public static T SafeGetComponent<T>(this MonoBehaviour monoBehaviour) where T : Component
+    {
+        T comp = monoBehaviour.GetComponent<T>();
+        if (!comp)
+        {
+            comp = monoBehaviour.gameObject.AddComponent<T>();
+        }
+        return comp;
+    }
+}

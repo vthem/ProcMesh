@@ -237,12 +237,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9ed3b520ba6145478a1162a768dbfc2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  meshInfo:
-    leftLod: -1
-    frontLod: -1
-    rightLod: -1
-    backLod: -1
-  forceRebuild: 0
+  lodInfo:
+    leftLod: 0
+    frontLod: 0
+    rightLod: 0
+    backLod: 0
+  forceRebuild: 1
   customVertexModifier: {fileID: 11400000, guid: 1184ca299bd66114391a4ef6992e7869,
     type: 2}
 --- !u!23 &1317558772

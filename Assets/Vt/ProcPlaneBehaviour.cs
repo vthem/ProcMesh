@@ -2,8 +2,10 @@ using System;
 using Unity.Collections;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.SceneManagement;
 #endif
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using SysStopwatch = System.Diagnostics.Stopwatch;
 
 public struct ProcPlaneCreateParameters
@@ -95,7 +97,8 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
         if (null == vertexModifier)
         {
-            customVertexModifier = ScriptableObject.CreateInstance<VertexModifierScriptableObject>(); ;
+            if (!customVertexModifier)
+                customVertexModifier = ScriptableObject.CreateInstance<VertexModifierScriptableObject>(); ;
             vertexModifier = customVertexModifier;
         }
 
@@ -177,7 +180,32 @@ public class ProcPlaneBehaviour : MonoBehaviour
         forceRebuildOnce = true;
     }
 
+    private void OnEnable()
+    {
 #if UNITY_EDITOR
+        EditorSceneManager.sceneSaving += SceneSaving;
+#endif
+    }
+
+    private void OnDisable()
+    {
+#if UNITY_EDITOR
+        EditorSceneManager.sceneSaving -= SceneSaving;
+#endif
+        ReleaseMeshInfo();
+    }
+
+#if UNITY_EDITOR
+    void SceneSaving(Scene scene, string path)
+    {
+        var mesh = GetComponent<MeshFilter>().sharedMesh;
+        if (mesh)
+        {            
+            DestroyImmediate(mesh);
+            GetComponent<MeshFilter>().sharedMesh = null;
+        }
+    }
+
     [MenuItem("GameObject/3D Object/Vt/Create ProceduralPlane", false, 0)]
     static void CreateCustomGameObject(MenuCommand menuCommand)
     {

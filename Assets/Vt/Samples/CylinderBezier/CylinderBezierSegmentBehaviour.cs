@@ -94,6 +94,10 @@ public class CylinderBezierEditorEditor : Editor
     {
         CylinderBezierSegmentBehaviour cbb = (CylinderBezierSegmentBehaviour)target;
         var transform = (target as MonoBehaviour).transform;
-        cbb.Segment = BezierSegmentBehaviour.DrawBezierHandles(cbb.Segment, transform);
+        var worldSegment = cbb.Segment.Transform(transform.localToWorldMatrix);
+        if (BezierSegmentBehaviour.DrawBezierHandles(ref worldSegment, "#", target))
+        {
+            cbb.Segment = worldSegment.Transform(transform.worldToLocalMatrix);
+        }
     }
 }

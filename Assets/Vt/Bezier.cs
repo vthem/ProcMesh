@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 // from https://catlikecoding.com/unity/tutorials/curves-and-splines/
 
@@ -64,8 +65,36 @@ public struct BezierSegment
 	{
 		return BezierMath.GetFirstDerivative(p0, p1, p2, p3, t);
 	}
+
+    public void JoinBegin(BezierSegment end)
+    {
+        p0 = end.p3;
+        var vec = end.p3 - end.p2;
+        p1 = p0 + vec;
+    }
+
+    public void JoinEnd(BezierSegment begin)
+    {
+        p3 = begin.p0;
+        var vec = begin.p0 - begin.p1;
+        p2 = p3 + vec;
+    }
+
+    public static BezierSegment Default => new BezierSegment(new Vector3(0, 0, -2),
+															 new Vector3(0, 0, -1),
+															 new Vector3(0, 0, 1),
+															 new Vector3(0, 0, 2));
+
+    public BezierSegment Transform(Matrix4x4 mat)
+    {
+        return new BezierSegment(mat.MultiplyPoint3x4(p0),
+            mat.MultiplyPoint3x4(p1),
+            mat.MultiplyPoint3x4(p2),
+            mat.MultiplyPoint3x4(p3));
+    }
 }
 
+[System.Serializable]
 public class BezierPath
 {
 	// add segment
@@ -74,5 +103,89 @@ public class BezierPath
 	// get segment(idx)
 	// set segment(idx, segment, align neightbor)
 
-	private List<BezierSegment> segments = new List<BezierSegment>(24);
+	public List<BezierSegment> segments = new List<BezierSegment>(24);
+
+    public int Count => segments.Count;
+
+    public BezierSegment GetSegment(int index)
+    {
+        return segments[index];
+    }
+
+    public void Clear()
+    {
+        segments.Clear();
+    }
+
+    public void SetSegment(int index, BezierSegment segment)
+    {
+       
+        if (index + 1 < Count)
+        {
+            var next = segments[index + 1];
+            next.JoinBegin(segment);
+            segments[index + 1] = next;
+        }
+        if (index - 1 >= 0)
+        {
+            var previous = segments[index - 1];
+            previous.JoinEnd(segment);
+            segments[index - 1] = previous;
+        }
+        segments[index] = segment;
+    }
+
+	public BezierSegment AddSegment()
+	{
+		BezierSegment segment = BezierSegment.Default;
+		if (segments.Count > 0)
+		{
+			segment.p1 = segments[segments.Count - 1].p2;
+			segment.p0 = -segments[segments.Count - 1].p3;
+		}
+		segments.Add(segment);
+		return segment;
+	}
+
+    public BezierSegment AddBegin()
+    {
+        BezierSegment segment = BezierSegment.Default;
+        if (Count > 0)
+        {
+            segment.JoinEnd(segments[0]);
+        }
+        segment.p1 = segment.p2 - Vector3.forward;
+        segment.p0 = segment.p1 - Vector3.forward;
+        segments.Insert(0, segment);
+        return segment;
+    }
+
+    public BezierSegment AddEnd()
+    {
+        if (Count == 0)
+            return AddBegin();
+            
+        BezierSegment segment = BezierSegment.Default;
+        segment.JoinBegin(segments[Count - 1]);
+        segment.p2 = segment.p1 + Vector3.forward;
+        segment.p3 = segment.p2 + Vector3.forward;
+        segments.Insert(Count - 1, segment);
+        return segment;
+    }
+
+    public Vector3 GetPoint(float t)
+	{
+        float f = t * segments.Count;
+        int idx = Mathf.FloorToInt(f);
+        float r = f - idx;
+		return segments[idx].GetPoint(r);
+	}
+
+    public Vector3 GetFirstDerivative(float t)
+    {
+        float f = t * segments.Count;
+        int idx = Mathf.FloorToInt(f);
+        float r = f - idx;
+        return segments[idx].GetFirstDerivative(r);
+    }
 }

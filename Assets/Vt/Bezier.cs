@@ -135,18 +135,6 @@ public class BezierPath
         segments[index] = segment;
     }
 
-	public BezierSegment AddSegment()
-	{
-		BezierSegment segment = BezierSegment.Default;
-		if (segments.Count > 0)
-		{
-			segment.p1 = segments[segments.Count - 1].p2;
-			segment.p0 = -segments[segments.Count - 1].p3;
-		}
-		segments.Add(segment);
-		return segment;
-	}
-
     public BezierSegment AddBegin()
     {
         BezierSegment segment = BezierSegment.Default;
@@ -169,7 +157,7 @@ public class BezierPath
         segment.JoinBegin(segments[Count - 1]);
         segment.p2 = segment.p1 + Vector3.forward;
         segment.p3 = segment.p2 + Vector3.forward;
-        segments.Insert(Count - 1, segment);
+        segments.Insert(Count, segment);
         return segment;
     }
 

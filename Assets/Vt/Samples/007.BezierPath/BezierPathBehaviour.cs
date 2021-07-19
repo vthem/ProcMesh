@@ -13,17 +13,6 @@ public class BezierPathBehaviour : MonoBehaviour
     private BezierPath bezierPath = new BezierPath();
         
     public BezierPath Path => bezierPath;
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        var childs = GetComponentInChildren<BezierSegmentBehaviour>();
-    }
 }
 
 #if UNITY_EDITOR

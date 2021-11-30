@@ -87,6 +87,7 @@ public class CylinderBezierSegmentBehaviour : MonoBehaviour
     }
 }
 
+#if UNITY_EDITOR
 [CustomEditor(typeof(CylinderBezierSegmentBehaviour)), CanEditMultipleObjects]
 public class CylinderBezierEditorEditor : Editor
 {
@@ -101,3 +102,4 @@ public class CylinderBezierEditorEditor : Editor
         }
     }
 }
+#endif

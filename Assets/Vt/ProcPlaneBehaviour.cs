@@ -106,8 +106,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
         if (!IsMeshInfoValid() || forceRebuild || (vertexModifier.HasChanged) || forceRebuildOnce)
         {
             forceRebuildOnce = false;
-            if (customVertexModifier)
-                customVertexModifier.HasChanged = false;
+            vertexModifier.HasChanged = false;
 
             ReleaseMeshInfo();
             AllocateMeshInfo();

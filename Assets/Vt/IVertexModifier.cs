@@ -6,7 +6,7 @@ public interface IVertexModifier
     int VertexCount1D { get; }
     int VertexCount2D { get; }
     int IndiceCount { get; }
-    public bool HasChanged { get; }
+    public bool HasChanged { get; set; }
 
     bool Initialize();
     Vector3 Vertex(int x, int z);

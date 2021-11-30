@@ -26,6 +26,27 @@ public static class Utils
     {
         return (value - fromBegin) / (fromEnd - fromBegin) * (toEnd - toBegin) + toBegin;
     }
+
+    public static int GetArrayIdx(int x, int y, int xCount, int yCount)
+    {
+        if (x < 0 || x >= xCount) return -1;
+        if (y < 0 || y >= yCount) return -1;
+        return x + y * xCount;
+    }
+
+    public static int GetArrayIdx(Vector2Int v, Vector2Int count)
+    {
+        if (v.x < 0 || v.x >= count.x) return -1;
+        if (v.y < 0 || v.y >= count.y) return -1;
+        return v.x + v.y * count.x;
+    }
+
+    public static (int, int) GetXYFromIndex(int index, int xCount)
+    {
+        int rx = index % xCount;
+        int ry = (index - rx) / xCount;
+        return (rx, ry);
+    }
 }
 
 public static class UnityExt
